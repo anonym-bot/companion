@@ -27,7 +27,7 @@ def process(update):
                 if not any(str(update['message']['from']['id']) in line.split()[0] for line in open('users.txt')):
                     with open('users.txt', 'a') as file:
                         file.write(f"{update['message']['from']['id']} {update['message']['from']['first_name'].split()[0]}\n")
-                    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': update['message']['from']['id'],'text': f"✅ *Hello <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !*", 'parse_mode': 'Markdown'})
+                    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': update['message']['from']['id'],'text': f"✅ <strong>Hello</strong> <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !*", 'parse_mode': 'HTML'})
                 with open(f"{update['message']['from']['id']}.txt", 'w') as file:
                     file.write(' ')
                 menu(update['message']['from']['id'])
