@@ -49,7 +49,7 @@ def process(update):
                     menu(update['message']['from']['id'])
     elif 'callback_query' in update and 'data' in update['callback_query']:
         data = update['callback_query']['data']
-        if data == '/ChatGPT' or data == '/Bing' or data == '/You':
+        if data == '/ChatGPT' or data == '/Bing' or data == '/You' or data == '/HuggingFace':
             reaction = {
                 "/ChatGPT": "❤️",
                 "/Bing": "❤️‍🔥",
