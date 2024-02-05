@@ -43,7 +43,8 @@ def process(update):
                     with open(f"{update['message']['from']['id']}.txt", 'r') as file:
                         model = file.readline()
                     core(update['message']['from']['id'], model, update['message']['text'])
-                except:
+                except Exception as e:
+                    print(e)
                     with open(f"{update['message']['from']['id']}.txt", 'w') as file:
                         file.write(' ')
                     menu(update['message']['from']['id'])
