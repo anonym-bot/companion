@@ -47,32 +47,31 @@ def process(update):
                     with open(f"{update['message']['from']['id']}.txt", 'w') as file:
                         file.write(' ')
                     menu(update['message']['from']['id'])
-        elif 'callback_query' in update and 'data' in update['callback_query']:
-            data = update['callback_query']['data']
-            if data == '/ChatGPT' or data == '/Bing' or data == '/You':
-                reaction = {
-                    "/ChatGPT": "❤️",
-                    "/Bing": "❤️‍🔥",
-                    "/You": "💘",
-                }
-                with open(f"{update['callback_query']['from']['id']}.txt", 'w') as file:
-                    file.write(data)
-                reply_markup = {'inline_keyboard': [
-                    [{'text': f"Bing AI ❤️‍🔥", 'callback_data': f"/Bing"}],
-                    [{'text': f"ChatGPT ❤️", 'callback_data': f"/ChatGPT"}],
-                    [{'text': f"You AI 💘", 'callback_data': f"/You"}]
-                ]}
-                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessage',params={'chat_id': update['callback_query']['from']['id'], 'message_id': update['callback_query']['message_id'],'text': f"_You chose: {data[:1]} AI_", 'parse_mode': 'Markdown','reply_markup': json.dumps(reply_markup)})
-                params = {'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message_id'],'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': f"{reaction.get(data)}"}])}
-                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction', params=params).json()
-            elif data[0] == 'R':
-                with open(f"{update['callback_query']['from']['id']}.txt", 'r') as file:
-                    model = file.readline()
-                core(update['callback_query']['from']['id'], model, data[:2])
-            elif data == 'Change':
-                menu(update['callback_query']['from']['id'])
+    elif 'callback_query' in update and 'data' in update['callback_query']:
+        data = update['callback_query']['data']
+        if data == '/ChatGPT' or data == '/Bing' or data == '/You':
+            reaction = {
+                "/ChatGPT": "❤️",
+                "/Bing": "❤️‍🔥",
+                "/You": "💘",
+            }
+            with open(f"{update['callback_query']['from']['id']}.txt", 'w') as file:
+                file.write(data)
+            reply_markup = {'inline_keyboard': [
+                [{'text': f"Bing AI ❤️‍🔥", 'callback_data': f"/Bing"}],
+                [{'text': f"ChatGPT ❤️", 'callback_data': f"/ChatGPT"}],
+                [{'text': f"You AI 💘", 'callback_data': f"/You"}]
+            ]}
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',params={'chat_id': update['callback_query']['from']['id'], 'message_id': update['callback_query']['message']['message_id'],'text': f"_You chose_ *{data[1:]} AI*", 'parse_mode': 'Markdown','reply_markup': json.dumps(reply_markup)}).json()
+            params = {'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id'],'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': f"{reaction.get(data)}"}])}
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction', params=params).json()
+        elif data[0] == 'R':
+            with open(f"{update['callback_query']['from']['id']}.txt", 'r') as file:
+                model = file.readline()
+            core(update['callback_query']['from']['id'], model, data[2:])
+        elif data == 'Change':
+            menu(update['callback_query']['from']['id'])
     return
-
 def menu(user_id):
     reply_markup = {'inline_keyboard': [
         [{'text': f"Bing AI ❤️‍🔥", 'callback_data': f"/Bing"}],
@@ -100,9 +99,8 @@ def core(user_id, mode, query):
     output = ""
     for message in response:
         output += message
-    print(output)
     reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {query}'}, {'text': f"Alter AI 〽️", 'callback_data': 'Change'}]]}
-    print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage', json={'chat_id': user_id,'text': f'{output}','parse_mode': 'Markdown','reply_markup': reply_markup}).json())
+    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage', json={'chat_id': user_id,'text': f'{output}','parse_mode': 'Markdown','reply_markup': reply_markup}).json()
     return
 
 def send_users():
@@ -112,4 +110,4 @@ def send_users():
     return
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
