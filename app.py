@@ -27,11 +27,11 @@ def process(update):
                 if not any(str(update['message']['from']['id']) in line.split()[0] for line in open('users.txt')):
                     with open('users.txt', 'a') as file:
                         file.write(f"{update['message']['from']['id']} {update['message']['from']['first_name'].split()[0]}\n")
-                    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': update['message']['from']['id'],'text': f"✅ <strong>Hello</strong> <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !*", 'parse_mode': 'HTML'})
+                    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': update['message']['from']['id'],'text': f"✅ *Hello <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !*", 'parse_mode': 'Markdown'})
                 with open(f"{update['message']['from']['id']}.txt", 'w') as file:
                     file.write(' ')
                 menu(update['message']['from']['id'])
-            elif message == '/ChatGPT' or message == '/Bing' or message == '/You':
+            elif message == '/ChatGPT' or message == '/Bing' or message == '/You' or message == '/HuggingFace':
                 requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage", data={"chat_id": update['message']['from']['id'],"message_id": update['message']['message_id']})
                 requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': update['message']['from']['id'], 'text': f"✅ *You are using {message[:1]} AI!*",'parse_mode': 'Markdown'})
                 with open(f"{update['message']['from']['id']}.txt", 'w') as file:
@@ -43,8 +43,7 @@ def process(update):
                     with open(f"{update['message']['from']['id']}.txt", 'r') as file:
                         model = file.readline()
                     core(update['message']['from']['id'], model, update['message']['text'])
-                except Exception as e:
-                    print(e)
+                except:
                     with open(f"{update['message']['from']['id']}.txt", 'w') as file:
                         file.write(' ')
                     menu(update['message']['from']['id'])
@@ -55,13 +54,15 @@ def process(update):
                 "/ChatGPT": "❤️",
                 "/Bing": "❤️‍🔥",
                 "/You": "💘",
+                "/HuggingFace": "🔥",
             }
             with open(f"{update['callback_query']['from']['id']}.txt", 'w') as file:
                 file.write(data)
             reply_markup = {'inline_keyboard': [
                 [{'text': f"Bing AI ❤️‍🔥", 'callback_data': f"/Bing"}],
                 [{'text': f"ChatGPT ❤️", 'callback_data': f"/ChatGPT"}],
-                [{'text': f"You AI 💘", 'callback_data': f"/You"}]
+                [{'text': f"You AI 💘", 'callback_data': f"/You"}],
+                [{'text': f"HuggingFace AI 🔥", 'callback_data': f"/HuggingFace"}]
             ]}
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',params={'chat_id': update['callback_query']['from']['id'], 'message_id': update['callback_query']['message']['message_id'],'text': f"_You chose_ *{data[1:]} AI*", 'parse_mode': 'Markdown','reply_markup': json.dumps(reply_markup)}).json()
             params = {'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id'],'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': f"{reaction.get(data)}"}])}
@@ -77,26 +78,44 @@ def menu(user_id):
     reply_markup = {'inline_keyboard': [
         [{'text': f"Bing AI ❤️‍🔥", 'callback_data': f"/Bing"}],
         [{'text': f"ChatGPT ❤️", 'callback_data': f"/ChatGPT"}],
-        [{'text': f"You AI 💘", 'callback_data': f"/You"}]
+        [{'text': f"You AI 💘", 'callback_data': f"/You"}],
+        [{'text': f"HuggingFace AI 🔥", 'callback_data': f"/HuggingFace"}]
     ]}
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': user_id, 'text': f"*Choose one:*",'parse_mode': 'Markdown', 'reply_markup': json.dumps(reply_markup)})
     return
 def core(user_id, mode, query):
     if mode == '/ChatGPT':
+        is_auth = False
         model = 'gpt-3.5-turbo'
         provider = g4f.Provider.Liaobots
     elif mode == '/Bing':
+        is_auth = False
         model = 'gpt-4-32k-0613'
         provider = g4f.Provider.Bing
     elif mode == '/You':
+        is_auth = False
         model = 'gpt-3.5-turbo'
         provider = g4f.Provider.You
-    response = g4f.ChatCompletion.create(
-        model=model,
-        provider=provider,
-        messages=[{'role': 'user', 'content': query}],
-        stream=True,
-    )
+    elif mode == '/HuggingFace':
+        is_auth = True
+        auth = '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'
+        model = 'openchat/openchat-3.5-0106' #many models are out there check out https://huggingface.co/chat
+        provider = g4f.Provider.HuggingChat
+    if is_auth:
+        response = g4f.ChatCompletion.create(
+            auth=auth,
+            model=model,
+            provider=provider,
+            messages=[{'role': 'user', 'content': query}],
+            stream=True,
+        )
+    else:
+        response = g4f.ChatCompletion.create(
+            model=model,
+            provider=provider,
+            messages=[{'role': 'user', 'content': query}],
+            stream=True,
+        )
     output = ""
     for message in response:
         output += message
