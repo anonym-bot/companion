@@ -75,9 +75,9 @@ def process(update):
 
 def menu(user_id):
     reply_markup = {'inline_keyboard': [
-        [{'text': f"Bing AI ☄️", 'callback_data': f"/Bing"}],
-        [{'text': f"ChatGPT 🔥", 'callback_data': f"/ChatGPT"}],
-        [{'text': f"You AI ♨️", 'callback_data': f"/You"}]
+        [{'text': f"Bing AI ❤️‍🔥", 'callback_data': f"/Bing"}],
+        [{'text': f"ChatGPT ❤️", 'callback_data': f"/ChatGPT"}],
+        [{'text': f"You AI 💘", 'callback_data': f"/You"}]
     ]}
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': user_id, 'text': f"*Choose one:*",'parse_mode': 'Markdown', 'reply_markup': json.dumps(reply_markup)})
     return
