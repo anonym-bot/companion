@@ -1,3 +1,4 @@
-flask
-requests
 g4f
+flask
+gunicorn
+requests
