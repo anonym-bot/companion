@@ -13,6 +13,7 @@ GROUP = -4099666754
 app = Flask(__name__)
 
 @app.route('/', methods=['POST'])
+@app.route('/', methods=['POST'])
 def handle_webhook():
     try:
         process(json.loads(request.get_data()))
@@ -29,7 +30,7 @@ def process(update):
                 if not any(str(update['message']['from']['id']) in line.split()[0] for line in open('users.txt')):
                     with open('users.txt', 'a') as file:
                         file.write(f"{update['message']['from']['id']} {update['message']['from']['first_name'].split()[0]}\n")
-                    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': update['message']['from']['id'],'text': f"✅ *Hello <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !*", 'parse_mode': 'HTML'})
+                    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': update['message']['from']['id'],'text': f"✅ Hello <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !", 'parse_mode': 'HTML'})
                 with open(f"{update['message']['from']['id']}.txt", 'w') as file:
                     file.write(' ')
                 menu(update['message']['from']['id'])
@@ -38,27 +39,28 @@ def process(update):
             elif message == '/Update':
                 with open(f"{update['message']['from']['id']}.txt", 'w') as file:
                     file.write(' ')
+            elif message == '/USERS' and update['message']['from']['id'] == ADMIN:
+                send_users()
             else:
                 try:
                     with open(f"{update['message']['from']['id']}.txt", 'r') as file:
                         model = file.readline()
                     #message_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': update['message']['from']['id'], 'message_id': update['message']['message_id'],}).json()['result']['message_id']
                     initial(update['message']['from']['id'], update['message']['message_id'], update['message']['text'], model)
-                    print('yedi')
                 except Exception as e:
                     print(e)
                     return
                     #message_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': update['message']['from']['id'], 'message_id': update['message']['message_id'],}).json()['result']['message_id']
-                    initial(update['message']['from']['id'], update['message']['message_id'], update['message']['text'], '/Bing')
+                    initial(update['message']['from']['id'], update['message']['message_id'], update['message']['text'], '/Neus')
     elif 'callback_query' in update and 'data' in update['callback_query']:
         data = update['callback_query']['data']
-        if data == 'ChatGPT' or data == 'Bing' or data == 'You' or data == 'HuggingFace':
+        if data == 'ChatGPT' or data == 'Neus' or data == 'Mistral' or data == 'HuggingFace' or data == 'Llama':
             options(update['callback_query']['from']['id'], '/' + data, update['callback_query']['message']['message_id'])
         elif data[0] == 'R':
             reply_markup = update['callback_query']['message']['reply_markup']
             if len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]) >= 5:
                 reply_markup['inline_keyboard'][0] = [{'text': 'You have reached the limit 😔', 'callback_data': 'limit'}]
-                print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': f"{update['callback_query']['message']['text']}", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json())
+                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': f"{update['callback_query']['message']['text']}", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
                 return
             for index, button in enumerate(reply_markup['inline_keyboard'][1]):
                 if button['text'] == '🙄':
@@ -71,15 +73,15 @@ def process(update):
                     button['text'] = f"Draft {index + 1}"
             reply_markup['inline_keyboard'].insert(0, [{'text': "Go back ◀️", 'callback_data': f"B {reply_markup['inline_keyboard'][0][0].get('callback_data')[2:]}"}])
             del reply_markup['inline_keyboard'][1]
-            reply_markup['inline_keyboard'].append([{'text': f"Bing AI ❤️‍🔥", 'callback_data': f"O /Bing"},{'text': f"ChatGPT ❤️", 'callback_data': f"O /ChatGPT"},{'text': f"You AI 💘", 'callback_data': f"O /You"},{'text': f"HuggingFace AI 🔥", 'callback_data': f"O /HuggingFace"}])
-            reply_markup['inline_keyboard'].append([{'text': f"Bing AI ❤️‍🔥", 'callback_data': f"O /Bing"},{'text': f"ChatGPT ❤️", 'callback_data': f"O /ChatGPT"},{'text': f"You AI 💘", 'callback_data': f"O /You"},{'text': f"HuggingFace AI 🔥", 'callback_data': f"O /HuggingFace"}])
+            reply_markup['inline_keyboard'].append([{'text': f"Neus AI❤️‍🔥", 'callback_data': f"O /Neus"},{'text': f"ChatGPT ❤️", 'callback_data': f"O /ChatGPT"},{'text': f"Mistral AI 💘", 'callback_data': f"O /Mistral"},{'text': f"HuggingFace AI 🔥", 'callback_data': f"O /HuggingFace"}])
+            reply_markup['inline_keyboard'].append([{'text': f"Llama AI 🤩", 'callback_data': f"O /Llama"},{'text': f" ", 'callback_data': f"O / "},{'text': f" ", 'callback_data': f"O / "},{'text': f" ", 'callback_data': f"O / "}])
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': "Choose one. I will send you the response.", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': reply_markup})
         elif data[0] == 'O':
             #reply_markup = update['callback_query']['message']['reply_markup']
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f"R {update['callback_query']['message']['reply_markup']['inline_keyboard'][0][0].get('callback_data')[2:]}"},{'text': "Try different AI ⏭", 'callback_data': f"A {update['callback_query']['message']['reply_markup']['inline_keyboard'][0][0].get('callback_data')[2:]}"}],update['callback_query']['message']['reply_markup']['inline_keyboard'][1]]}
             if len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]) >= 5:
                 reply_markup['inline_keyboard'][0] = [{'text': 'You have reached the limit 😔', 'callback_data': 'limit'}]
-                print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': f"{update['callback_query']['message']['text']}", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json())
+                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': f"{update['callback_query']['message']['text']}", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
                 #gotta do something
                 return
             for index, button in enumerate(reply_markup['inline_keyboard'][1]):
@@ -88,10 +90,10 @@ def process(update):
             core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], update['callback_query']['message']['reply_to_message']['text'], data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup)
         elif data[0] == 'C':
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {data[2:]}'},{'text': "Try different AI ⏭", 'callback_data': f"A {data[2:]}"}],update['callback_query']['message']['reply_markup']['inline_keyboard'][1]]}
-            print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'],'text': f"{update['callback_query']['message']['text']}\n\nCanceled successfully!",'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json())
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'],'text': f"{update['callback_query']['message']['text']}\n\nCanceled successfully!",'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
         elif data[0] == 'B':
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {data[2:]}'},{'text': "Try different AI ⏭", 'callback_data': f"A {data[2:]}"}],update['callback_query']['message']['reply_markup']['inline_keyboard'][1]]}
-            print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'],'text': "Here you can see old drafts or generate more.",'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json())
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'],'text': "Here you can see old drafts or generate more.",'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
         elif data[0] == 'D':
             reply_markup = update['callback_query']['message']['reply_markup']
             for index, button in enumerate(reply_markup['inline_keyboard'][1]):
@@ -106,29 +108,39 @@ def process(update):
             pass
 def menu(user_id):
     reply_markup = {'inline_keyboard': [
-        [{'text': f"Bing AI ❤️‍🔥", 'callback_data': f"Bing"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
-        [{'text': f"You AI 💘", 'callback_data': f"You"}, {'text': f"HuggingFace AI 🔥", 'callback_data': f"HuggingFace"}],
-        [{'text': f"You AI 🤩", 'callback_data': f"You"}, {'text': f"HuggingFace AI 😍", 'callback_data': f"HuggingFace"}],
-        [{'text': f"You AI 🕊", 'callback_data': f"You"}, {'text': f"HuggingFace AI ⚡️", 'callback_data': f"HuggingFace"}]
+        [{'text': f"Neus AI ❤️‍🔥", 'callback_data': f"Neus"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
+        [{'text': f"Mistral AI 💘", 'callback_data': f"Mistral"}, {'text': f"HuggingFace AI 🔥", 'callback_data': f"HuggingFace"}],
+        [{'text': f"Llama AI 🤩", 'callback_data': f"Llama"}, {'text': f" ", 'callback_data': f" "}],
+        [{'text': f" ", 'callback_data': f" "}, {'text': f" ", 'callback_data': f" "}]
     ]}
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': user_id, 'text': f"*Choose one:*",'parse_mode': 'Markdown', 'reply_markup': json.dumps(reply_markup)})
+    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': user_id, 'text': f"*Choose your default AI assistant:*",'parse_mode': 'Markdown', 'reply_markup': json.dumps(reply_markup)})
     return
 def initial(user_id, message_id, query, mode):
-    print(mode)
     is_auth = False
     if mode == '/ChatGPT':
-        model = 'gpt-3.5-turbo'
-        provider = g4f.Provider.Liaobots
-    elif mode == '/Bing':
-        model = 'gpt-4-32k-0613'
-        provider = g4f.Provider.Bing
-    elif mode == '/You':
-        model = 'gpt-3.5-turbo'
-        provider = g4f.Provider.You
+        is_auth = True
+        auth = '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'
+        model = 'openchat/openchat-3.5-0106'
+        provider = g4f.Provider.HuggingChat
+    elif mode == '/Neus':
+        is_auth = True
+        auth = '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'
+        model = 'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
+        provider = g4f.Provider.HuggingChat
+    elif mode == '/Mistral':
+        is_auth = True
+        auth = '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'
+        model = 'mistralai/Mistral-7B-Instruct-v0.2'
+        provider = g4f.Provider.HuggingChat
     elif mode == '/HuggingFace':
         is_auth = True
         auth = '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'
-        model = 'openchat/openchat-3.5-0106' #many models are out there check out https://huggingface.co/chat
+        model = 'mistralai/Mixtral-8x7B-Instruct-v0.1' #many models are out there check out https://huggingface.co/chat
+        provider = g4f.Provider.HuggingChat
+    elif mode == '/Llama':
+        is_auth = True
+        auth = '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'
+        model = 'meta-llama/Llama-2-70b-chat-hf'
         provider = g4f.Provider.HuggingChat
     if is_auth:
         response = g4f.ChatCompletion.create(
@@ -153,11 +165,10 @@ def initial(user_id, message_id, query, mode):
         #regenerate_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': eteabt,}).json()['result']['message_id']
         #reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {query}'},{'text': f"Alter AI 〽️", 'callback_data': 'Change'}], [{'text': f"Previous ⏮", 'callback_data': f'P {state}'}]]}
     start = time.time()
-    print('kelli')
     for message in response:
         output += message
         if time.time() - start > 2:
-            print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText', json={'chat_id': user_id,'text': f'{output}', 'message_id': edit_id,'reply_markup': reply_markup}).json())
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText', json={'chat_id': user_id,'text': f'{output}', 'message_id': edit_id,'reply_markup': reply_markup}).json()
             start += 2
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output, 'message_id': edit_id,'reply_markup': reply_markup})
     copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': edit_id}).json()['result']['message_id']
@@ -167,20 +178,30 @@ def initial(user_id, message_id, query, mode):
 
 def core(user_id, message_id, query, mode, number, reply_markup): #number can be obtained by iterating update['callback_query']['message']['reply_markup']['inline_keyboard'][1]
     is_auth = False
-    print(mode)
     if mode == '/ChatGPT':
-        model = 'gpt-3.5-turbo'
-        provider = g4f.Provider.Liaobots
-    elif mode == '/Bing':
-        model = 'gpt-4-32k-0613'
-        provider = g4f.Provider.Bing
-    elif mode == '/You':
-        model = 'gpt-3.5-turbo'
-        provider = g4f.Provider.You
+        is_auth = True
+        auth = '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'
+        model = 'openchat/openchat-3.5-0106'
+        provider = g4f.Provider.HuggingChat
+    elif mode == '/Neus':
+        is_auth = True
+        auth = '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'
+        model = 'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
+        provider = g4f.Provider.HuggingChat
+    elif mode == '/Mistral':
+        is_auth = True
+        auth = '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'
+        model = 'mistralai/Mistral-7B-Instruct-v0.2'
+        provider = g4f.Provider.HuggingChat
     elif mode == '/HuggingFace':
         is_auth = True
         auth = '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'
-        model = 'openchat/openchat-3.5-0106' #many models are out there check out https://huggingface.co/chat
+        model = 'mistralai/Mixtral-8x7B-Instruct-v0.1' #many models are out there check out https://huggingface.co/chat
+        provider = g4f.Provider.HuggingChat
+    elif mode == '/Llama':
+        is_auth = True
+        auth = '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'
+        model = 'meta-llama/Llama-2-70b-chat-hf'
         provider = g4f.Provider.HuggingChat
     if is_auth:
         response = g4f.ChatCompletion.create(
@@ -204,7 +225,7 @@ def core(user_id, message_id, query, mode, number, reply_markup): #number can be
     for message in response:
         output += message
         if time.time() - start > 2:
-            print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText', json={'chat_id': user_id,'text': f'{output}', 'message_id': message_id,'reply_markup': reply_markup}).json())
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText', json={'chat_id': user_id,'text': f'{output}', 'message_id': message_id,'reply_markup': reply_markup}).json()
             start += 2
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output, 'message_id': message_id,'reply_markup': reply_markup})
     copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': message_id}).json()['result']['message_id']
@@ -217,18 +238,19 @@ def core(user_id, message_id, query, mode, number, reply_markup): #number can be
 def options(user_id, data, message_id):
     reaction = {
         "/ChatGPT": "❤️",
-        "/Bing": "❤️‍🔥",
-        "/You": "💘",
+        "/Neus": "❤️‍🔥",
+        "/Mistral": "💘",
         "/HuggingFace": "🔥",
+        "/Llama": "🤩"
     }
     with open(f"{user_id}.txt", 'w') as file:
         file.write(data)
     reply_markup = {'inline_keyboard': [
-        [{'text': f"Bing AI ❤️‍🔥", 'callback_data': f"Bing"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
-        [{'text': f"You AI 💘", 'callback_data': f"You"}, {'text': f"HuggingFace AI 🔥", 'callback_data': f"HuggingFace"}],
-        [{'text': f"You AI 🤩", 'callback_data': f"You"}, {'text': f"HuggingFace AI 😍", 'callback_data': f"HuggingFace"}],
-        [{'text': f"You AI 🕊", 'callback_data': f"You"}, {'text': f"HuggingFace AI ⚡️", 'callback_data': f"HuggingFace"}]]}
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',params={'chat_id': user_id,'message_id': message_id,'text': f"_You are using_ *{data[1:]} AI*", 'parse_mode': 'Markdown','reply_markup': json.dumps(reply_markup)}).json()
+        [{'text': f"Neus AI ❤️‍🔥", 'callback_data': f"Neus"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
+        [{'text': f"Mistral AI 💘", 'callback_data': f"Mistral"}, {'text': f"HuggingFace AI 🔥", 'callback_data': f"HuggingFace"}],
+        [{'text': f"Llama AI 🤩", 'callback_data': f"Llama"}, {'text': f" ", 'callback_data': f" "}],
+        [{'text': f" ", 'callback_data': f" "}, {'text': f" ", 'callback_data': f" "}]]}
+    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',params={'chat_id': user_id,'message_id': message_id,'text': f"_Your default AI assistant is set to_ *{data[1:]} AI*", 'parse_mode': 'Markdown','reply_markup': json.dumps(reply_markup)}).json()
     params = {'chat_id': user_id,'message_id': message_id, 'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': f"{reaction.get(data)}"}])}
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction', params=params).json()
 
