@@ -39,7 +39,6 @@ def process(update):
                 initialize()
             elif message == '/USERS' and update['message']['from']['id'] == ADMIN:
                 send_users()
-                send_photo()
             else:
                 try:
                     with open(f"{update['message']['from']['id']}.txt", 'r') as file:
@@ -264,29 +263,6 @@ def initialize():
         for line in file.readlines():
             with open(f'{line.split()[0]}.txt', 'w') as f:
                 f.write(' ')
-    return
-
-def send_photo():
-    from diffusers import StableDiffusionPipeline
-    import torch
-
-    model_id = "runwayml/stable-diffusion-v1-5"
-    pipe = StableDiffusionPipeline.from_pretrained(model_id, torch_dtype=torch.float16)
-    pipe = pipe.to("cuda")
-
-    prompt = "a photo of an astronaut riding a horse on mars"
-    image = pipe(prompt).images[0]
-
-    image.save("astronaut_rides_horse.png")
-    print('done!')
-    with open("astronaut_rides_horse.png", 'rb') as photo_file:
-        files = {'photo': ('photo.jpg', photo_file)}
-
-        # Parameters for the photo message
-        params = {'chat_id': ADMIN}
-
-        # Send the photo using requests.post method
-        print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto', params=params, files=files))
     return
 
 if __name__ == '__main__':
