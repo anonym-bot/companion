@@ -72,7 +72,7 @@ def process(update):
             reply_markup['inline_keyboard'].insert(0, [{'text': "Go back ◀️", 'callback_data': f"B {reply_markup['inline_keyboard'][0][0].get('callback_data')[2:]}"}])
             del reply_markup['inline_keyboard'][1]
             reply_markup['inline_keyboard'].append([{'text': f"Neus AI❤️‍🔥", 'callback_data': f"O /Neus"},{'text': f"ChatGPT ❤️", 'callback_data': f"O /ChatGPT"},{'text': f"Mistral AI 💘", 'callback_data': f"O /Mistral"},{'text': f"HuggingFace AI 🔥", 'callback_data': f"O /HuggingFace"}])
-            reply_markup['inline_keyboard'].append([{'text': f"Llama AI 🤩", 'callback_data': f"O /Llama"},{'text': f" ", 'callback_data': f"O / "},{'text': f" ", 'callback_data': f"O / "},{'text': f" ", 'callback_data': f"O / "}])
+            reply_markup['inline_keyboard'].append([{'text': f"Llama AI 🤩", 'callback_data': f"O /Llama"},{'text': f" ", 'callback_data': f" "},{'text': f" ", 'callback_data': f" "},{'text': f" ", 'callback_data': f" "}])
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': "Choose one. I will send you the response.", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': reply_markup})
         elif data[0] == 'O':
             #reply_markup = update['callback_query']['message']['reply_markup']
@@ -89,6 +89,9 @@ def process(update):
         elif data[0] == 'C':
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {data[2:]}'},{'text': "Try different AI ⏭", 'callback_data': f"A {data[2:]}"}],update['callback_query']['message']['reply_markup']['inline_keyboard'][1]]}
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'],'text': f"{update['callback_query']['message']['text']}\n\nCanceled successfully!",'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
+        elif data[0] == 'c':
+            reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {data[2:]}'},{'text': "Try different AI ⏭", 'callback_data': f"A {data[2:]}"}],[{'text': "Delete ❌", 'callback_data': "delete"}]]}
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'],'text': f"{update['callback_query']['message']['text']}\n\nCanceled successfully!",'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
         elif data[0] == 'B':
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {data[2:]}'},{'text': "Try different AI ⏭", 'callback_data': f"A {data[2:]}"}],update['callback_query']['message']['reply_markup']['inline_keyboard'][1]]}
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'],'text': "Here you can see old drafts or generate more.",'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
@@ -103,7 +106,9 @@ def process(update):
         elif data == 'limit':
             params = {'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id'],'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': '😢'}])}
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction', params=params).json()
-            pass
+        elif data == 'delete':
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id']})
+        return
 def menu(user_id):
     reply_markup = {'inline_keyboard': [
         [{'text': f"Neus AI ❤️‍🔥", 'callback_data': f"Neus"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
@@ -157,7 +162,7 @@ def initial(user_id, message_id, query, mode):
         )
     output = ""
     #if state == ' ':
-    reply_markup = {'inline_keyboard': [[{'text': "Cancel 🤚", 'callback_data': f"C {mode}"}]]}
+    reply_markup = {'inline_keyboard': [[{'text': "Cancel 🤚", 'callback_data': f"c {mode}"}]]}
     edit_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',json={'chat_id': user_id, 'text': f'*✅ {mode[1:]} AI* _is generating..._','reply_markup': reply_markup, 'parse_mode': 'Markdown', 'reply_to_message_id': message_id}).json()['result']['message_id']
     #else:
         #regenerate_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': eteabt,}).json()['result']['message_id']
@@ -171,7 +176,7 @@ def initial(user_id, message_id, query, mode):
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output, 'message_id': edit_id,'reply_markup': reply_markup})
     copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': edit_id}).json()['result']['message_id']
     reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}], [{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]}
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\nHere is your ad!', 'message_id': edit_id,'reply_markup': reply_markup})
+    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n_Here could be your ad!_', 'message_id': edit_id,'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
     return
 
 def core(user_id, message_id, query, mode, number, reply_markup): #number can be obtained by iterating update['callback_query']['message']['reply_markup']['inline_keyboard'][1]
@@ -264,6 +269,7 @@ def initialize():
             with open(f'{line.split()[0]}.txt', 'w') as f:
                 f.write(' ')
     return
+
 
 if __name__ == '__main__':
     app.run(debug=False)
