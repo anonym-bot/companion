@@ -4,3 +4,4 @@ gunicorn
 requests
 torch
 diffusers
+transformers
