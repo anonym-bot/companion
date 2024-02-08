@@ -2,6 +2,3 @@ g4f
 flask
 gunicorn
 requests
-torch
-diffusers
-transformers
