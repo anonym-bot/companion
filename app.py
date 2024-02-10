@@ -7,7 +7,7 @@ from flask import Flask, request
 import assemblyai as aai
 
 
-BOT_TOKEN = '6949099878:AAFLahQxI31DjKTlmWR_usBYtYHv40czRxk'
+BOT_TOKEN = '6966843961:AAEUzsWDoq9sljpNChgXpODi3i4FbeSWS3Q'
 ADMIN = 5934725286
 GROUP = -4099666754
 GENERATION = ["https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.", "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5", "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4", "https://api-inference.huggingface.co/models/prompthero/openjourney"]
@@ -45,7 +45,7 @@ def process(update):
                 send_users()
             else:
                 with open(f"{update['message']['from']['id']}.txt", 'r') as file:
-                    a = file.readline().split()[0]
+                    a = file.readline()
                     model = a.split()[0]
                     format = a.split()[1]
                 if model == 'IG':
@@ -60,7 +60,7 @@ def process(update):
         elif 'voice' in update['message']:
             try:
                 with open(f"{update['message']['from']['id']}.txt", 'r') as file:
-                    a = file.readline().split()[0]
+                    a = file.readline()
                     model = a.split()[0]
                     format = a.split()[1]
                 aai.settings.api_key = "cc59032b0a284ef3a7071106a7be9885"
@@ -148,7 +148,7 @@ def process(update):
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction', params=params).json()
         elif data == 'delete':
             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id']})
-        return
+    return
 def menu(user_id):
     reply_markup = {'inline_keyboard': [
         [{'text': f"Neus AI ❤️‍🔥", 'callback_data': f"Neus"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
@@ -385,17 +385,9 @@ def enhancer(user_id, message_id, query, format):
     requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json=payload)
     return
 def keyboard(user_id, text):
-    keyboard = {
-        'keyboard': [
-            ['Text Generation','Image Generation', 'Image Enhancer']
-        ],
-        'one_time_keyboard': False,
-        'resize_keyboard': True
-    }
     data = {
         'chat_id': user_id,
         'text': text,
-        'reply_markup': json.dumps(keyboard),
         'parse_mode' : 'HTML'
     }
     print(requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", data=data).json())
@@ -413,7 +405,6 @@ def initialize():
             with open(f'{line.split()[0]}.txt', 'w') as f:
                 f.write(' ')
     return
-
 
 if __name__ == '__main__':
     app.run(debug=False)
