@@ -141,7 +141,10 @@ def menu(user_id):
     return
 def initial(user_id, message_id, query, mode):
     is_auth = False
-    if mode == '/ChatGPT':
+    if mode == ' ':
+        menu(user_id)
+        return
+    elif mode == '/ChatGPT':
         is_auth = True
         auth = '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'
         model = 'openchat/openchat-3.5-0106'
