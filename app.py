@@ -30,47 +30,53 @@ def process(update):
                 if not any(str(update['message']['from']['id']) in line.split()[0] for line in open('users.txt')):
                     with open('users.txt', 'a') as file:
                         file.write(f"{update['message']['from']['id']} {update['message']['from']['first_name'].split()[0]}\n")
-                    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': update['message']['from']['id'],'text': f"✅ Hello <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !", 'parse_mode': 'HTML'})
+                    keyboard(update['message']['from']['id'], f"✅ Hello <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !")
                 with open(f"{update['message']['from']['id']}.txt", 'w') as file:
                     file.write(' ')
-                menu(update['message']['from']['id'])
+                menu(update['message']['from']['id'], 'a')
             elif message == '/Choose':
-                menu(update['message']['from']['id'])
+                menu(update['message']['from']['id'], 'a')
+            elif message == 'Text Generation':
+                menu(update['message']['from']['id'], 't')
+            elif message == 'Image Generation':
+                with open(f"{update['message']['from']['id']}.txt", 'w') as file:
+                    file.write('IG')
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': update['message']['from']['id'],'message_id': update['message']['message_id']})
+                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': update['message']['from']['id'], 'text': f"*Set to Image Generation mode!*\n_Send a descriptive message for me to generate image samples for you_",'parse_mode': 'Markdown'})
+            elif message == 'Image Enhancer':
+                with open(f"{update['message']['from']['id']}.txt", 'w') as file:
+                    file.write('IE')
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': update['message']['from']['id'],'message_id': update['message']['message_id']})
+                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': update['message']['from']['id'], 'text': f"*Set to Image Enhancement mode!*\n_Send an image for me to enhance its quality_",'parse_mode': 'Markdown'})
             elif message == '/INITIALIZE' and update['message']['from']['id'] == ADMIN:
                 initialize()
             elif message == '/USERS' and update['message']['from']['id'] == ADMIN:
                 send_users()
             else:
-                try:
-                    with open(f"{update['message']['from']['id']}.txt", 'r') as file:
-                        model = file.readline()
-                    #message_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': update['message']['from']['id'], 'message_id': update['message']['message_id'],}).json()['result']['message_id']
-                    initial(update['message']['from']['id'], update['message']['message_id'], update['message']['text'], model)
-                except Exception as e:
-                    print(e)
-                    data = {
-                        'chat_id': update['message']['from']['id'],
-                        'text': f"*System has been updated! please re /start*",
-                        'parse_mode': 'Markdown'
-                    }
-                    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", data=data)
-                    return
-        elif 'voice' in update['message']:
-            try:
-                aai.settings.api_key = "cc59032b0a284ef3a7071106a7be9885"
                 with open(f"{update['message']['from']['id']}.txt", 'r') as file:
                     model = file.readline()
+                if model == 'IG':
+                    image(update['message']['from']['id'], update['message']['message_id'], update['message']['text'])
+                elif model[0] == '/':
+                    reply_markup = {'inline_keyboard': [[{'text': "Cancel 🤚", 'callback_data': f"c {model}"}]]}
+                    edit_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',json={'chat_id': update['message']['from']['id'], 'text': f'*✅ {model[1:]} AI* _is generating..._','reply_markup': reply_markup, 'parse_mode': 'Markdown','reply_to_message_id': update['message']['message_id']}).json()['result']['message_id']
+                    initial(update['message']['from']['id'], update['message']['text'], model, edit_id)
+                elif model == 'IE':
+                    enhancer(update['message']['from']['id'], update['message']['message_id'], update['message']['text'])
+                    pass
+        elif 'voice' in update['message']:
+            try:
+                with open(f"{update['message']['from']['id']}.txt", 'r') as file:
+                    model = file.readline()
+                aai.settings.api_key = "cc59032b0a284ef3a7071106a7be9885"
+                reply_markup = {'inline_keyboard': [[{'text': "Cancel 🤚", 'callback_data': f"c {model}"}]]}
                 file_url = requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['message']['voice']['file_id']}).json()['result']['file_path']
+                edit_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',json={'chat_id': update['message']['from']['id'],'text': f"🧏🏻‍♂️ _Your voice is being processed_",'reply_markup': reply_markup, 'parse_mode': 'Markdown','reply_to_message_id': update['message']['message_id']}).json()['result']['message_id']
                 transcript = aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
-                initial(update['message']['from']['id'], update['message']['message_id'], transcript, model)
-            except Exception as e:
-                print(e)
-                data = {
-                    'chat_id': update['message']['from']['id'],
-                    'text': f"*System has been updated! please re /start*",
-                    'parse_mode': 'Markdown'
-                }
-                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", data=data)
+                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['message']['from']['id'],'message_id': edit_id,'text': f'*✅ {model[1:]} AI* _is generating..._','reply_markup': reply_markup, 'parse_mode': 'Markdown','reply_to_message_id': update['message']['message_id']})
+                initial(update['message']['from']['id'], transcript, model, edit_id)
+            except:
+                print('yemadi')
                 return
     elif 'callback_query' in update and 'data' in update['callback_query']:
         data = update['callback_query']['data']
@@ -88,6 +94,7 @@ def process(update):
             if 'voice' in update['callback_query']['message']['reply_to_message']:
                 aai.settings.api_key = "cc59032b0a284ef3a7071106a7be9885"
                 file_url = requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['callback_query']['message']['reply_to_message']['voice']['file_id']}).json()['result']['file_path']
+                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': f"🧏🏻‍♂️ _Your voice is being processed_", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
                 transcript = aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
                 core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], transcript, data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup)
             elif 'text' in update['callback_query']['message']['reply_to_message']:
@@ -116,6 +123,7 @@ def process(update):
             if 'voice' in update['callback_query']['message']['reply_to_message']:
                 aai.settings.api_key = "cc59032b0a284ef3a7071106a7be9885"
                 file_url = requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['callback_query']['message']['reply_to_message']['voice']['file_id']}).json()['result']['file_path']
+                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': f"🧏🏻‍♂️ _Your voice is being processed_", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
                 transcript = aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
                 core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], transcript, data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup)
             elif 'text' in update['callback_query']['message']['reply_to_message']:
@@ -152,12 +160,9 @@ def menu(user_id):
     ]}
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': user_id, 'text': f"*Choose your default AI assistant:*",'parse_mode': 'Markdown', 'reply_markup': json.dumps(reply_markup)})
     return
-def initial(user_id, message_id, query, mode):
+def initial(user_id, query, mode, edit_id):
     is_auth = False
-    if mode == ' ':
-        menu(user_id)
-        return
-    elif mode == '/ChatGPT':
+    if mode == '/ChatGPT':
         is_auth = True
         auth = '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'
         model = 'openchat/openchat-3.5-0106'
@@ -200,7 +205,6 @@ def initial(user_id, message_id, query, mode):
     output = ""
     #if state == ' ':
     reply_markup = {'inline_keyboard': [[{'text': "Cancel 🤚", 'callback_data': f"c {mode}"}]]}
-    edit_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',json={'chat_id': user_id, 'text': f'*✅ {mode[1:]} AI* _is generating..._','reply_markup': reply_markup, 'parse_mode': 'Markdown', 'reply_to_message_id': message_id}).json()['result']['message_id']
     #else:
         #regenerate_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': eteabt,}).json()['result']['message_id']
         #reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {query}'},{'text': f"Alter AI 〽️", 'callback_data': 'Change'}], [{'text': f"Previous ⏮", 'callback_data': f'P {state}'}]]}
@@ -215,7 +219,7 @@ def initial(user_id, message_id, query, mode):
     reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}], [{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]}
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n_Here could be your ad!_', 'message_id': edit_id,'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
     return
-
+    
 def core(user_id, message_id, query, mode, number, reply_markup): #number can be obtained by iterating update['callback_query']['message']['reply_markup']['inline_keyboard'][1]
     is_auth = False
     if mode == '/ChatGPT':
