@@ -151,13 +151,20 @@ def process(update):
         elif data == 'delete':
             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id']})
         return
-def menu(user_id):
-    reply_markup = {'inline_keyboard': [
-        [{'text': f"Neus AI ❤️‍🔥", 'callback_data': f"Neus"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
-        [{'text': f"Mistral AI 💘", 'callback_data': f"Mistral"}, {'text': f"HuggingFace AI 🔥", 'callback_data': f"HuggingFace"}],
-        [{'text': f"Llama AI 🤩", 'callback_data': f"Llama"}, {'text': f" ", 'callback_data': f" "}],
-        [{'text': f" ", 'callback_data': f" "}, {'text': f" ", 'callback_data': f" "}]
-    ]}
+def menu(user_id, option):
+    if option == 'a':
+        reply_markup = {'inline_keyboard': [
+            [{'text': f"Neus AI ❤️‍🔥", 'callback_data': f"Neus"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
+            [{'text': f"Mistral AI 💘", 'callback_data': f"Mistral"}, {'text': f"HuggingFace AI 🔥", 'callback_data': f"HuggingFace"}],
+            [{'text': f"Llama AI 🤩", 'callback_data': f"Llama"}],
+            [{'text': f"Image Generator 👨‍💻", 'callback_data': f"IG"}, {'text': f"Image Enhancer 🫡", 'callback_data': f"IE"}]
+        ]}
+    elif option == 't':
+        reply_markup = {'inline_keyboard': [
+            [{'text': f"Neus AI ❤️‍🔥", 'callback_data': f"Neus"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
+            [{'text': f"Mistral AI 💘", 'callback_data': f"Mistral"}, {'text': f"HuggingFace AI 🔥", 'callback_data': f"HuggingFace"}],
+            [{'text': f"Llama AI 🤩", 'callback_data': f"Llama"}, {'text': f" ", 'callback_data': f" "}],
+        ]}
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': user_id, 'text': f"*Choose your default AI assistant:*",'parse_mode': 'Markdown', 'reply_markup': json.dumps(reply_markup)})
     return
 def initial(user_id, query, mode, edit_id):
