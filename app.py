@@ -293,8 +293,8 @@ def set_delivery(user_id, data, message_id):
         model = file.readline().split()[0]
     with open(f"{user_id}.txt", 'w') as file:
         file.write(f"{model} {data}")
-    reply_markup = {'inline_keyboard': [[{'text': f"Text", 'callback_data': f"T T"}, {'text': f"Audio", 'callback_data': f"T A"}]]}
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',params={'chat_id': user_id, 'text': f"*I will send the response as {message.get(data)}*",'parse_mode': 'Markdown', 'reply_markup': json.dumps(reply_markup)})
+    reply_markup = {'inline_keyboard': [[{'text': f"Text ❤️", 'callback_data': f"T T"}, {'text': f"Audio ❤️‍🔥", 'callback_data': f"T A"}]]}
+    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',params={'chat_id': user_id, 'text': f"*I will send the response as {message.get(data)}*",'parse_mode': 'Markdown', 'reply_markup': json.dumps(reply_markup)})
     params = {'chat_id': user_id,'message_id': message_id, 'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': f"{reaction.get(data)}"}])}
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction', params=params).json()
 
