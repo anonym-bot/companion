@@ -142,7 +142,7 @@ def process(update):
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': update['callback_query']['from']['id'], 'from_chat_id': GROUP,'message_id': int(data.split()[1]), 'reply_markup': json.dumps(reply_markup), 'reply_to_message_id': update['callback_query']['message']['reply_to_message']['message_id']})
             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id']})
         elif data[0] == 'T':
-            set_delivery(update['message']['from']['id'], data, update['message']['message_id'])
+            set_delivery(update['callback_query']['from']['id'], data, update['callback_query']['message']['message_id'])
         elif data == 'limit':
             params = {'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id'],'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': '😢'}])}
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction', params=params).json()
