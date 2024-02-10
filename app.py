@@ -76,8 +76,8 @@ def process(update):
                 transcript = aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
                 requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['message']['from']['id'],'message_id': edit_id,'text': f'*✅ {model[1:]} AI* _is generating..._','reply_markup': reply_markup, 'parse_mode': 'Markdown','reply_to_message_id': update['message']['message_id']})
                 initial(update['message']['from']['id'], transcript, model, edit_id)
-            except:
-                print('yemadi')
+            except Exception as e:
+                print(e)
                 return
     elif 'callback_query' in update and 'data' in update['callback_query']:
         data = update['callback_query']['data']
