@@ -7,7 +7,7 @@ from flask import Flask, request
 import assemblyai as aai
 
 
-BOT_TOKEN = '6966843961:AAEUzsWDoq9sljpNChgXpODi3i4FbeSWS3Q'
+BOT_TOKEN = '6949099878:AAFLahQxI31DjKTlmWR_usBYtYHv40czRxk'
 ADMIN = 5934725286
 GROUP = -4099666754
 GENERATION = ["https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.", "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5", "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4", "https://api-inference.huggingface.co/models/prompthero/openjourney"]
