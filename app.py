@@ -62,7 +62,7 @@ def process(update):
                 file_url = requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['message']['voice']['file_id']}).json()['result']['file_path']
                 transcript = aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
                 initial(update['message']['from']['id'], update['message']['message_id'], transcript, model)
-            except:
+            except Exception as e:
                 print(e)
                 data = {
                     'chat_id': update['message']['from']['id'],
