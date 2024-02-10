@@ -3,6 +3,7 @@ import g4f
 import time
 import json
 import requests
+import assemblyai as aai
 from flask import Flask, request
 
 
