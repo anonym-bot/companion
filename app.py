@@ -3,13 +3,14 @@ import g4f
 import time
 import json
 import requests
-import assemblyai as aai
 from flask import Flask, request
+import assemblyai as aai
 
 
-BOT_TOKEN = '6949099878:AAFLahQxI31DjKTlmWR_usBYtYHv40czRxk'
+BOT_TOKEN = '6966843961:AAEUzsWDoq9sljpNChgXpODi3i4FbeSWS3Q'
 ADMIN = 5934725286
 GROUP = -4099666754
+GENERATION = ["https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.", "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5", "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4", "https://api-inference.huggingface.co/models/prompthero/openjourney"]
 
 app = Flask(__name__)
 
@@ -82,6 +83,8 @@ def process(update):
         data = update['callback_query']['data']
         if data == 'ChatGPT' or data == 'Neus' or data == 'Mistral' or data == 'HuggingFace' or data == 'Llama':
             options(update['callback_query']['from']['id'], '/' + data, update['callback_query']['message']['message_id'])
+        elif data == 'IG' or data == 'IE':
+            options(update['callback_query']['from']['id'], data, update['callback_query']['message']['message_id'])
         elif data[0] == 'R':
             reply_markup = update['callback_query']['message']['reply_markup']
             if len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]) >= 5:
@@ -226,7 +229,7 @@ def initial(user_id, query, mode, edit_id):
     reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}], [{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]}
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n_Here could be your ad!_', 'message_id': edit_id,'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
     return
-    
+
 def core(user_id, message_id, query, mode, number, reply_markup): #number can be obtained by iterating update['callback_query']['message']['reply_markup']['inline_keyboard'][1]
     is_auth = False
     if mode == '/ChatGPT':
@@ -292,18 +295,86 @@ def options(user_id, data, message_id):
         "/Neus": "❤️‍🔥",
         "/Mistral": "💘",
         "/HuggingFace": "🔥",
-        "/Llama": "🤩"
+        "/Llama": "🤩",
+        "IG": "👨‍💻",
+        "IE": "🫡"
     }
     with open(f"{user_id}.txt", 'w') as file:
         file.write(data)
     reply_markup = {'inline_keyboard': [
         [{'text': f"Neus AI ❤️‍🔥", 'callback_data': f"Neus"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
         [{'text': f"Mistral AI 💘", 'callback_data': f"Mistral"}, {'text': f"HuggingFace AI 🔥", 'callback_data': f"HuggingFace"}],
-        [{'text': f"Llama AI 🤩", 'callback_data': f"Llama"}, {'text': f" ", 'callback_data': f" "}],
-        [{'text': f" ", 'callback_data': f" "}, {'text': f" ", 'callback_data': f" "}]]}
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',params={'chat_id': user_id,'message_id': message_id,'text': f"_Your default AI assistant is set to_ *{data[1:]} AI*", 'parse_mode': 'Markdown','reply_markup': json.dumps(reply_markup)}).json()
+        [{'text': f"Llama AI 🤩", 'callback_data': f"Llama"}],
+        [{'text': f"Image Generator 👨‍💻", 'callback_data': f"IG"}, {'text': f"Image Enhancer 🫡", 'callback_data': f"IE"}]
+    ]}
+    option = {
+        "IG": 'Image Generation',
+        "IE": 'Image Enhancer'
+    }
+    if data == 'IG' or data == 'IE':
+        requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',params={'chat_id': user_id,'message_id': message_id,'text': f"_Your default AI assistant is set to_ *{option.get(data)}* AI", 'parse_mode': 'Markdown','reply_markup': json.dumps(reply_markup)}).json()
+    else:
+        requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',params={'chat_id': user_id,'message_id': message_id,'text': f"_Your default AI assistant is set to_ *{data[1:]} AI*", 'parse_mode': 'Markdown','reply_markup': json.dumps(reply_markup)}).json()
     params = {'chat_id': user_id,'message_id': message_id, 'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': f"{reaction.get(data)}"}])}
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction', params=params).json()
+
+
+def image(user_id, message_id, query):
+    headers = {"Authorization": f"Bearer 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"}
+    media = []
+    for i in range(4):
+        response = requests.post(GENERATION[i], headers=headers, json={"inputs": query})
+        time.sleep(10)
+        with open('nano.jpeg', 'wb') as file:
+            file.write(response.content)
+        with open('nano.jpeg', 'rb') as photo_file:
+            try:
+                media.append({"type": 'photo', "media": requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto', data={'chat_id': user_id}, files={'photo': photo_file}).json()['result']['photo'][0]['file_id']})
+            except:
+                continue
+    reply_markup = {'inline_keyboard': [
+        [{'text': f"Neus AI ❤️‍🔥", 'callback_data': f"Neus"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
+        [{'text': f"Mistral AI 💘", 'callback_data': f"Mistral"}, {'text': f"HuggingFace AI 🔥", 'callback_data': f"HuggingFace"}],
+        [{'text': f"Llama AI 🤩", 'callback_data': f"Llama"}],
+        [{'text': f"Image Generator 👨‍💻", 'callback_data': f"IG"}, {'text': f"Image Enhancer 🫡", 'callback_data': f"IE"}]
+    ]}
+    payload = {
+        'chat_id': user_id,
+        'message_id': message_id,
+        'media': media,
+        'quote': '*hello*',
+        'quote_parse_mode': 'Markdown',
+        "reply_markup": json.dumps(reply_markup)
+    }
+    edit_id = requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMediaGroup", json=payload).json()['result'][0]['message_id']
+    print(edit_id)
+    payload = {
+        "chat_id": user_id,
+        "message_id": edit_id,
+        'media': media,
+        "reply_markup": json.dumps(reply_markup)
+    }
+    print(requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageReplyMarkup", json=payload).json())
+
+def enhancer(user_id, message_id, query):
+    pass
+
+def keyboard(user_id, text):
+    keyboard = {
+        'keyboard': [
+            ['Text Generation','Image Generation', 'Image Enhancer']
+        ],
+        'one_time_keyboard': False,
+        'resize_keyboard': True
+    }
+    data = {
+        'chat_id': user_id,
+        'text': text,
+        'reply_markup': json.dumps(keyboard),
+        'parse_mode' : 'HTML'
+    }
+    print(requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", data=data).json())
+    return
 
 def send_users():
     with open('users.txt', 'r') as file:
