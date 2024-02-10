@@ -47,9 +47,30 @@ def process(update):
                     initial(update['message']['from']['id'], update['message']['message_id'], update['message']['text'], model)
                 except Exception as e:
                     print(e)
+                    data = {
+                        'chat_id': update['message']['from']['id'],
+                        'text': f"*System has been updated! please re /start*",
+                        'parse_mode': 'Markdown'
+                    }
+                    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", data=data)
                     return
-                    #message_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': update['message']['from']['id'], 'message_id': update['message']['message_id'],}).json()['result']['message_id']
-                    initial(update['message']['from']['id'], update['message']['message_id'], update['message']['text'], '/Neus')
+        elif 'voice' in update['message']:
+            try:
+                aai.settings.api_key = "cc59032b0a284ef3a7071106a7be9885"
+                with open(f"{update['message']['from']['id']}.txt", 'r') as file:
+                    model = file.readline()
+                file_url = requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['message']['voice']['file_id']}).json()['result']['file_path']
+                transcript = aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
+                initial(update['message']['from']['id'], update['message']['message_id'], transcript, model)
+            except:
+                print(e)
+                data = {
+                    'chat_id': update['message']['from']['id'],
+                    'text': f"*System has been updated! please re /start*",
+                    'parse_mode': 'Markdown'
+                }
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", data=data)
+                return
     elif 'callback_query' in update and 'data' in update['callback_query']:
         data = update['callback_query']['data']
         if data == 'ChatGPT' or data == 'Neus' or data == 'Mistral' or data == 'HuggingFace' or data == 'Llama':
