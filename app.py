@@ -166,6 +166,7 @@ def delivery_type(user_id):
     return
 
 def initial(user_id, query, mode, edit_id, format):
+    print(format)
     is_auth = False
     if mode == '/ChatGPT':
         is_auth = True
@@ -229,6 +230,7 @@ def initial(user_id, query, mode, edit_id, format):
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}],[{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]}
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice', params={'chat_id': user_id, 'caption': 'Voice message caption', 'reply_markup':reply_markup}, files={'voice': open('random.ogg', 'rb')})
         else:
+            print('yemadi')
             #say the limit has reached or we are having problems
             return
     else:
@@ -418,6 +420,7 @@ def tts(query):
             file.write(response.content)
         return True
     else:
+        print(response.content)
         return False
 def keyboard(user_id, text):
     data = {
