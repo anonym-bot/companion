@@ -1,8 +1,10 @@
 import io
+import os
 import g4f
 import time
 import json
 import requests
+from gtts import gTTS
 from flask import Flask, request
 import assemblyai as aai
 
@@ -229,6 +231,8 @@ def initial(user_id, query, mode, edit_id, format):
             copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice', params={'chat_id': GROUP, 'caption': 'Voice message caption'}, files={'voice': open('random.ogg', 'rb')}).json()['result']['message_id']
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}],[{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]}
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice', params={'chat_id': user_id, 'caption': 'Voice message caption', 'reply_markup':reply_markup}, files={'voice': open('random.ogg', 'rb')})
+            if os.path.exists('random.ogg'):
+                os.remove('random.ogg')
         else:
             print('yemadi')
             #say the limit has reached or we are having problems
@@ -402,26 +406,11 @@ def enhancer(user_id, message_id, query, format):
     return
 
 def tts(query):
-    payload = {
-        "text": query,
-        "model_id": "eleven_multilingual_v1",
-        "voice_settings": {
-            "similarity_boost": 0.75,
-            "stability": 0.5
-        }
-    }
-    headers = {
-        "xi-api-key": "b46d8b1796dc9afa4836c8d13e76cf85",
-        "Content-Type": "application/json"
-    }
-    response = requests.request("POST", "https://api.elevenlabs.io/v1/text-to-speech/onwK4e9ZLuTAKqWW03F9",json=payload, headers=headers)
-    if response.status_code == 200:
-        with open('random.ogg', 'wb') as file:
-            file.write(response.content)
-        return True
-    else:
-        print(response.content)
-        return False
+    # Language (ISO 639-1 language code)
+    language = 'en'
+    tts = gTTS(text=query, lang=language, slow=False)
+    tts.save("random.ogg")
+    return True
 def keyboard(user_id, text):
     data = {
         'chat_id': user_id,
