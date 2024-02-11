@@ -240,11 +240,21 @@ def initial(user_id, query, mode, edit_id, format):
                     ]
                 ]
             }
-            print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice', params={'chat_id': user_id, 'caption': f'_{mode[1:]} says_', 'reply_markup': reply_markup, 'parse_mode': 'Markdown'}, files={'voice': open('random.ogg', 'rb')}).json())
+            
+            # Serialize the reply_markup to JSON
+            reply_markup_json = json.dumps(reply_markup)
+            
+            response = requests.post(
+                f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',
+                params={'chat_id': user_id, 'caption': f'_{mode[1:]} says_', 'reply_markup': reply_markup_json, 'parse_mode': 'Markdown'},
+                files={'voice': open('random.ogg', 'rb')}
+            ).json()
+            
+            print(response)
             if os.path.exists('random.ogg'):
                 os.remove('random.ogg')
-        else:
-            print('yemadi')
+            else:
+                print('yemadi')
             #say the limit has reached or we are having problems
             return
     else:
