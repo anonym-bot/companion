@@ -230,7 +230,7 @@ def initial(user_id, query, mode, edit_id, format):
         if tts(output):
             copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice', params={'chat_id': GROUP, 'caption': 'Voice message caption'}, files={'voice': open('random.ogg', 'rb')}).json()['result']['message_id']
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}],[{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]}
-            print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice', params={'chat_id': user_id, 'caption': 'Voice message caption', 'reply_markup':json.dumps(reply_markup)}, files={'voice': open('random.ogg', 'rb')}).json())
+            print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice', params={'chat_id': user_id, 'caption': 'Voice message caption'}, files={'voice': open('random.ogg', 'rb')}).json())
             if os.path.exists('random.ogg'):
                 os.remove('random.ogg')
         else:
