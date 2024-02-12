@@ -85,6 +85,7 @@ def process(update):
         elif data[0] == 'R':
             reply_markup = update['callback_query']['message']['reply_markup']
             if len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]) >= 5:
+                print(reply_markup)
                 reply_markup['inline_keyboard'][0] = [{'text': 'You have reached the limit 😔', 'callback_data': 'limit'}]
                 requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': f"{update['callback_query']['message']['text']}", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
                 return
