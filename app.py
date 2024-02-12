@@ -144,7 +144,7 @@ def process(update):
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'],'text': f"{update['callback_query']['message']['text']}\n\nCanceled successfully!",'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
         elif data[0] == 'B':
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {data[2:]}'},{'text': "Try different AI ⏭", 'callback_data': f"A {data[2:]}"}],update['callback_query']['message']['reply_markup']['inline_keyboard'][1]]}
-            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'],'text': "Here you can see old drafts or generate more.",'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageReplyMarkup',json={'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
         elif data[0] == 'D':
             reply_markup = update['callback_query']['message']['reply_markup']
             for index, button in enumerate(reply_markup['inline_keyboard'][1]):
