@@ -238,7 +238,7 @@ def initial(user_id, query, mode, edit_id, format, reply_id):
         if tts(output):
             copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': GROUP, 'caption': f'_{mode[1:]} says_', 'parse_mode': 'Markdown'},files={'voice': open('random.ogg', 'rb')}).json()['result']['message_id']
             reply_markup_json = json.dumps({'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}],[{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]})
-            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': user_id, 'caption': f'_{mode[1:]} says_', 'reply_markup': reply_markup_json,'parse_mode': 'Markdown', 'reply_to_message_id':reply_id},files={'voice': open('random.ogg', 'rb')})
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendAudio',params={'chat_id': user_id, 'caption': f'_{mode[1:]} says_', 'reply_markup': reply_markup_json,'parse_mode': 'Markdown', 'reply_to_message_id':reply_id},files={'voice': open('random.ogg', 'rb')})
             if os.path.exists('random.ogg'):
                 os.remove('random.ogg')
         else:
@@ -323,7 +323,7 @@ def core(user_id, message_id, query, mode, number, reply_markup, voice_reply_id)
     else:
         return
     return
-    
+
 def set_delivery(user_id, data, message_id):
     reaction = {
         "T T": "❤️",
@@ -459,3 +459,4 @@ def initialize():
 
 if __name__ == '__main__':
     app.run(debug=False)
+
