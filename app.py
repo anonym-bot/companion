@@ -245,6 +245,7 @@ def initial(user_id, query, mode, edit_id, format, reply_id):
         requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n_Here could be your ad!_', 'message_id': edit_id,'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
         return
     elif format == 'A':
+        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'record_voice'})
         for message in response:
             output += message
         requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'upload_voice'})
