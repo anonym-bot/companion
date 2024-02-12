@@ -4,7 +4,7 @@ import g4f
 import time
 import json
 import requests
-from gtts import gTTs
+from gtts import gTTS
 from flask import Flask, request
 import assemblyai as aai
 
