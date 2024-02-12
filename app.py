@@ -109,7 +109,7 @@ def process(update):
             del reply_markup['inline_keyboard'][1]
             reply_markup['inline_keyboard'].append([{'text': f"Neus AI❤️‍🔥", 'callback_data': f"O /Neus"},{'text': f"ChatGPT ❤️", 'callback_data': f"O /ChatGPT"},{'text': f"Mistral AI 💘", 'callback_data': f"O /Mistral"}])
             reply_markup['inline_keyboard'].append([{'text': f"HuggingFace AI 🔥", 'callback_data': f"O /HuggingFace"}, {'text': f"Llama AI 🤩", 'callback_data': f"O /Llama"}])
-            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': "Choose one. I will send you the response.", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': reply_markup})
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageReplyMarkup',json={'chat_id': update['callback_query']['from']['id'], 'message_id': update['callback_query']['message']['message_id'],'reply_markup': reply_markup})
         elif data[0] == 'O':
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f"R {update['callback_query']['message']['reply_markup']['inline_keyboard'][0][0].get('callback_data')[2:]}"},{'text': "Try different AI ⏭", 'callback_data': f"A {update['callback_query']['message']['reply_markup']['inline_keyboard'][0][0].get('callback_data')[2:]}"}],update['callback_query']['message']['reply_markup']['inline_keyboard'][1]]}
             if len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]) >= 5:
