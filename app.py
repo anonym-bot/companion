@@ -4,15 +4,15 @@ import g4f
 import time
 import json
 import requests
-from gtts import gTTS
 from flask import Flask, request
 import assemblyai as aai
 
 
-BOT_TOKEN = '6949099878:AAFLahQxI31DjKTlmWR_usBYtYHv40czRxk'
+BOT_TOKEN = '6966843961:AAEUzsWDoq9sljpNChgXpODi3i4FbeSWS3Q'
 ADMIN = 5934725286
 GROUP = -4099666754
 GENERATION = ["https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.", "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5", "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4", "https://api-inference.huggingface.co/models/prompthero/openjourney"]
+
 
 app = Flask(__name__)
 
@@ -73,8 +73,8 @@ def process(update):
                 transcript = aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
                 requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['message']['from']['id'],'message_id': edit_id,'text': f'*✅ {model[1:]} AI* _is generating..._','reply_markup': reply_markup, 'parse_mode': 'Markdown','reply_to_message_id': update['message']['message_id']})
                 initial(update['message']['from']['id'], transcript, model, edit_id, format, update['message']['message_id'])
-            except:
-                print('yemadi')
+            except Exception as e:
+                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['message']['from']['id'],'message_id': edit_id,'text': f'_Sorry, I could not catch you_', 'parse_mode': 'Markdown','reply_to_message_id': update['message']['message_id']})
                 return
     elif 'callback_query' in update and 'data' in update['callback_query']:
         data = update['callback_query']['data']
@@ -97,9 +97,17 @@ def process(update):
                 file_url = requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['callback_query']['message']['reply_to_message']['voice']['file_id']}).json()['result']['file_path']
                 requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': f"🧏🏻‍♂️ _Your voice is being processed_", 'message_id': update['callback_query']['message']['message_id'],'parse_mode':'Markdown','reply_markup': json.dumps(reply_markup)}).json()
                 transcript = aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
-                core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], transcript, data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'])
+                if 'voice' in update['callback_query']['message']:
+                    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': update['callback_query']['from']['id'], 'action': 'record_voice'})
+                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], transcript, data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'], 'A')
+                else:
+                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], transcript, data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'], 'T')
             elif 'text' in update['callback_query']['message']['reply_to_message']:
-                core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], update['callback_query']['message']['reply_to_message']['text'], data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'])
+                if 'voice' in update['callback_query']['message']:
+                    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': update['callback_query']['from']['id'], 'action': 'record_voice'})
+                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], update['callback_query']['message']['reply_to_message']['text'], data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'], 'A')
+                else:
+                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], update['callback_query']['message']['reply_to_message']['text'], data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'], 'T')
         elif data[0] == 'A':
             reply_markup = update['callback_query']['message']['reply_markup']
             for index, button in enumerate(reply_markup['inline_keyboard'][1]):
@@ -120,22 +128,24 @@ def process(update):
                 if button['text'] == '🙄':
                     button['text'] = f"Draft {index + 1}"
             if 'voice' in update['callback_query']['message']:
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': update['callback_query']['from']['id'], 'action': 'record_voice'})
                 if 'voice' in update['callback_query']['message']['reply_to_message']:
                     aai.settings.api_key = "cc59032b0a284ef3a7071106a7be9885"
                     file_url = requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['callback_query']['message']['reply_to_message']['voice']['file_id']}).json()['result']['file_path']
                     transcript = aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
-                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], transcript, data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'])
+                    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': update['callback_query']['from']['id'], 'action': 'record_voice'})
+                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], transcript, data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'], 'A')
                 elif 'text' in update['callback_query']['message']['reply_to_message']:
-                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], update['callback_query']['message']['reply_to_message']['text'], data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'])
+                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], update['callback_query']['message']['reply_to_message']['text'], data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'], 'A')
             else:
                 if 'voice' in update['callback_query']['message']['reply_to_message']:
                     aai.settings.api_key = "cc59032b0a284ef3a7071106a7be9885"
                     file_url = requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['callback_query']['message']['reply_to_message']['voice']['file_id']}).json()['result']['file_path']
-                    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': f"🧏🏻‍♂️ _Your voice is being processed_", 'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
+                    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'], 'text': f"🧏🏻‍♂️ _Your voice is being processed_", 'message_id': update['callback_query']['message']['message_id'], 'parse_mode': 'Markdown', 'reply_markup': json.dumps(reply_markup)}).json()
                     transcript = aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
-                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], transcript, data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'])
+                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], transcript, data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'], 'T')
                 elif 'text' in update['callback_query']['message']['reply_to_message']:
-                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], update['callback_query']['message']['reply_to_message']['text'], data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'])
+                    core(update['callback_query']['from']['id'], update['callback_query']['message']['message_id'], update['callback_query']['message']['reply_to_message']['text'], data.split()[1], len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup, update['callback_query']['message']['reply_to_message']['message_id'], 'T')
         elif data[0] == 'C':
             reply_markup = {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {data[2:]}'},{'text': "Try different AI ⏭", 'callback_data': f"A {data[2:]}"}],update['callback_query']['message']['reply_markup']['inline_keyboard'][1]]}
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': update['callback_query']['from']['id'],'text': f"{update['callback_query']['message']['text']}\n\nCanceled successfully!",'message_id': update['callback_query']['message']['message_id'],'reply_markup': json.dumps(reply_markup)}).json()
@@ -222,6 +232,7 @@ def initial(user_id, query, mode, edit_id, format, reply_id):
     if format == 'T':
         reply_markup = {'inline_keyboard': [[{'text': "Cancel 🤚", 'callback_data': f"c {mode}"}]]}
         start = time.time()
+        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'typing'})
         for message in response:
             output += message
             if time.time() - start > 2:
@@ -235,22 +246,22 @@ def initial(user_id, query, mode, edit_id, format, reply_id):
     elif format == 'A':
         for message in response:
             output += message
+        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'upload_voice'})
         if tts(output):
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': user_id, 'message_id': edit_id})
             copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': GROUP, 'caption': f'_{mode[1:]} says_', 'parse_mode': 'Markdown'},files={'voice': open('random.ogg', 'rb')}).json()['result']['message_id']
             reply_markup_json = json.dumps({'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}],[{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]})
-            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendAudio',params={'chat_id': user_id, 'caption': f'_{mode[1:]} says_', 'reply_markup': reply_markup_json,'parse_mode': 'Markdown', 'reply_to_message_id':reply_id},files={'voice': open('random.ogg', 'rb')})
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': user_id, 'caption': f'_{mode[1:]} says_', 'reply_markup': reply_markup_json,'parse_mode': 'Markdown', 'reply_to_message_id':reply_id},files={'voice': copy_id['result']['voice']['file_id']})
             if os.path.exists('random.ogg'):
                 os.remove('random.ogg')
         else:
-            print('yemadi')
-            #say the limit has reached or we are having problems
+            reply_markup = json.dumps({'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}]]})
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'_Something went wrong!_\n\n*Note:\nVoice response function is working as a test mode.*','message_id': edit_id, 'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
             return
     else:
         return
 
-def core(user_id, message_id, query, mode, number, reply_markup, voice_reply_id): #number can be obtained by iterating update['callback_query']['message']['reply_markup']['inline_keyboard'][1]
-    with open(f"{user_id}.txt", 'r') as file:
-        format = file.readline().split()[1]
+def core(user_id, message_id, query, mode, number, reply_markup, voice_reply_id, format): #number can be obtained by iterating update['callback_query']['message']['reply_markup']['inline_keyboard'][1]
     is_auth = False
     if mode == '/ChatGPT':
         is_auth = True
@@ -294,6 +305,7 @@ def core(user_id, message_id, query, mode, number, reply_markup, voice_reply_id)
         )
     output = ""
     if format == 'T':
+        print(requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'typing'}))
         reply_markup['inline_keyboard'][0] = [{'text': "Cancel 🤚", 'callback_data': f"C {mode}"}]
         requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'*✅ {mode[1:]} AI* _is generating..._', 'message_id': message_id, 'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
         start = time.time()
@@ -310,15 +322,19 @@ def core(user_id, message_id, query, mode, number, reply_markup, voice_reply_id)
     elif format == 'A':
         for message in response:
             output += message
+        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'upload_voice'})
         if tts(output):
             audio = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': GROUP, 'caption': f'_{mode[1:]} says_', 'parse_mode': 'Markdown'},files={'voice': open('random.ogg', 'rb')}).json()
             reply_markup['inline_keyboard'][1].append({'text': f"Draft {number + 1}", 'callback_data': f"D {audio['result']['message_id']} {number + 1}"})
             reply_markup['inline_keyboard'][0] = [{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}]
-            print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageMedia',params={'chat_id': user_id,'message_id': message_id,'caption': f'_{mode[1:]} says_','reply_markup': json.dumps(reply_markup),'media': json.dumps({'type': 'audio','performer': f'{mode}','media': audio['result']['voice']['file_id']}),'parse_mode': 'Markdown'}).json())
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage", params={'chat_id': user_id, 'message_id': message_id})
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': user_id,'caption': f'_{mode[1:]} says_','reply_markup': json.dumps(reply_markup),'parse_mode': 'Markdown', 'reply_to_message_id': voice_reply_id}, files={'voice': json.dumps({'voice': audio['result']['voice']['file_id']})}).json()
             if os.path.exists('random.ogg'):
                 os.remove('random.ogg')
         else:
-            print('yemadi')
+            reply_markup['inline_keyboard'][0] = json.dumps({'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}]]})
+            reply_markup['inline_keyboard'].append([[{'text': f"Something went wrong!", 'callback_data': f'error'}]])
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageReplyMarkup',json={'chat_id': user_id, 'message_id': message_id,'reply_markup': reply_markup})
             return
     else:
         return
@@ -459,4 +475,3 @@ def initialize():
 
 if __name__ == '__main__':
     app.run(debug=False)
-
