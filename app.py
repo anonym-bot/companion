@@ -250,9 +250,9 @@ def initial(user_id, query, mode, edit_id, format, reply_id):
         requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'upload_voice'})
         if tts(output):
             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': user_id, 'message_id': edit_id})
-            copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': GROUP, 'caption': f'_{mode[1:]} says_', 'parse_mode': 'Markdown'},files={'voice': open('random.ogg', 'rb')}).json()['result']['message_id']
-            reply_markup_json = json.dumps({'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}],[{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]})
-            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': user_id, 'caption': f'_{mode[1:]} says_', 'reply_markup': reply_markup_json,'parse_mode': 'Markdown', 'reply_to_message_id':reply_id},files={'voice': copy_id['result']['voice']['file_id']})
+            answer = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': GROUP, 'caption': f'_{mode[1:]} says_', 'parse_mode': 'Markdown'},files={'voice': open('random.ogg', 'rb')}).json()
+            reply_markup_json = json.dumps({'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}],[{'text': f"Draft 1", 'callback_data': f"D {answer['result']['message_id']} 1"}]]})
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': user_id, 'caption': f'_{mode[1:]} says_', 'reply_markup': reply_markup_json,'parse_mode': 'Markdown', 'reply_to_message_id':reply_id},files={'voice': answer['result']['voice']['file_id']})
             if os.path.exists('random.ogg'):
                 os.remove('random.ogg')
         else:
