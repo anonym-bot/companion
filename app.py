@@ -222,8 +222,8 @@ def initial(user_id, query, mode, edit_id, format, reply_id):
         auth = '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'
         #model = 'meta-llama/Llama-2-70b-chat-hf'
         #provider = g4f.Provider.HuggingChat
-        model = "DeepInfra/pygmalion-13b-4bit-128g",
-        provider = g4f.Provider.DeepInfra,
+        model = "mistral-medium",
+        provider = g4f.Provider.PerplexityLabs,
     if is_auth:
         response = g4f.ChatCompletion.create(
             auth=auth,
@@ -310,8 +310,8 @@ def core(user_id, message_id, query, mode, number, reply_markup, voice_reply_id,
         auth = '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'
         #model = 'meta-llama/Llama-2-70b-chat-hf'
         #provider = g4f.Provider.HuggingChat
-        model = "DeepInfra/pygmalion-13b-4bit-128g",
-        provider = g4f.Provider.DeepInfra,
+        model = "mistral-medium",
+        provider = g4f.Provider.PerplexityLabs,
     if is_auth:
         response = g4f.ChatCompletion.create(
             auth=auth,
