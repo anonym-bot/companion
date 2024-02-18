@@ -190,30 +190,40 @@ def delivery_type(user_id):
 def initial(user_id, query, mode, edit_id, format, reply_id):
     is_auth = False
     if mode == '/ChatGPT':
-        is_auth = True
+        #is_auth = True
         auth = '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'
-        model = 'openchat/openchat-3.5-0106'
-        provider = g4f.Provider.HuggingChat
+        #model = 'openchat/openchat-3.5-0106'
+        #provider = g4f.Provider.HuggingChat
+        provider = g4f.Provider.Aura
+        model = "gpt-3.5-turbo"
     elif mode == '/Neus':
-        is_auth = True
+        #is_auth = True
         auth = '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'
-        model = 'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
-        provider = g4f.Provider.HuggingChat
+        #model = 'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
+        #provider = g4f.Provider.HuggingChat
+        provider = g4f.Provider.ChatgptDemo
+        model = "gpt-3.5-turbo"
     elif mode == '/Mistral':
-        is_auth = True
+        #is_auth = True
         auth = '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'
-        model = 'mistralai/Mistral-7B-Instruct-v0.2'
-        provider = g4f.Provider.HuggingChat
+        #model = 'mistralai/Mistral-7B-Instruct-v0.2'
+        #provider = g4f.Provider.HuggingChat
+        provider = g4f.Provider.Koala
+        model = "gpt-3.5-turbo"
     elif mode == '/HuggingFace':
-        is_auth = True
+        #is_auth = True
         auth = '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'
-        model = 'mistralai/Mixtral-8x7B-Instruct-v0.1' #many models are out there check out https://huggingface.co/chat
-        provider = g4f.Provider.HuggingChat
+        #model = 'mistralai/Mixtral-8x7B-Instruct-v0.1' #many models are out there check out https://huggingface.co/chat
+        #provider = g4f.Provider.HuggingChat
+        provider = g4f.Provider.Liaobots
+        model = "gpt-3.5-turbo"
     elif mode == '/Llama':
-        is_auth = True
+        #is_auth = True
         auth = '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'
-        model = 'meta-llama/Llama-2-70b-chat-hf'
-        provider = g4f.Provider.HuggingChat
+        #model = 'meta-llama/Llama-2-70b-chat-hf'
+        #provider = g4f.Provider.HuggingChat
+        model = "DeepInfra/pygmalion-13b-4bit-128g",
+        provider = g4f.Provider.DeepInfra,
     if is_auth:
         response = g4f.ChatCompletion.create(
             auth=auth,
@@ -235,6 +245,7 @@ def initial(user_id, query, mode, edit_id, format, reply_id):
         start = time.time()
         requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'typing'})
         for message in response:
+            print(message)
             output += message
             if time.time() - start > 2:
                 requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText', json={'chat_id': user_id,'text': f'{output}', 'message_id': edit_id,'reply_markup': reply_markup}).json()
@@ -253,9 +264,9 @@ def initial(user_id, query, mode, edit_id, format, reply_id):
             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': user_id, 'message_id': edit_id})
             answer = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': GROUP, 'caption': f'_{mode[1:]} says_', 'parse_mode': 'Markdown'},files={'voice': open('random.ogg', 'rb')}).json()
             reply_markup_json = json.dumps({'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}],[{'text': f"Draft 1", 'callback_data': f"D {answer['result']['message_id']} 1"}]]})
-            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': user_id, 'caption': f'_{mode[1:]} says_', 'reply_markup': reply_markup_json,'parse_mode': 'Markdown', 'reply_to_message_id':reply_id},files={'voice': open('random.ogg', 'rb')})
-            if os.path.exists('random.ogg'):
-                os.remove('random.ogg')
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': user_id, 'caption': f'_{mode[1:]} says_', 'reply_markup': reply_markup_json,'parse_mode': 'Markdown', 'reply_to_message_id':reply_id},files={'voice': answer['result']['voice']['file_id']})
+            #if os.path.exists('random.ogg'):
+            #    os.remove('random.ogg')
         else:
             reply_markup = json.dumps({'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}]]})
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'_Something went wrong!_\n\n*Note:\nVoice response function is working as a test mode.*','message_id': edit_id, 'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
@@ -266,30 +277,40 @@ def initial(user_id, query, mode, edit_id, format, reply_id):
 def core(user_id, message_id, query, mode, number, reply_markup, voice_reply_id, format): #number can be obtained by iterating update['callback_query']['message']['reply_markup']['inline_keyboard'][1]
     is_auth = False
     if mode == '/ChatGPT':
-        is_auth = True
+        #is_auth = True
         auth = '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'
-        model = 'openchat/openchat-3.5-0106'
-        provider = g4f.Provider.HuggingChat
+        #model = 'openchat/openchat-3.5-0106'
+        #provider = g4f.Provider.HuggingChat
+        provider = g4f.Provider.Aura
+        model = "gpt-3.5-turbo"
     elif mode == '/Neus':
-        is_auth = True
+        #is_auth = True
         auth = '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'
-        model = 'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
-        provider = g4f.Provider.HuggingChat
+        #model = 'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO'
+        #provider = g4f.Provider.HuggingChat
+        provider = g4f.Provider.ChatgptDemo
+        model = "gpt-3.5-turbo"
     elif mode == '/Mistral':
-        is_auth = True
+        #is_auth = True
         auth = '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'
-        model = 'mistralai/Mistral-7B-Instruct-v0.2'
-        provider = g4f.Provider.HuggingChat
+        #model = 'mistralai/Mistral-7B-Instruct-v0.2'
+        #provider = g4f.Provider.HuggingChat
+        provider = g4f.Provider.Koala
+        model = "gpt-3.5-turbo"
     elif mode == '/HuggingFace':
-        is_auth = True
+        #is_auth = True
         auth = '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'
-        model = 'mistralai/Mixtral-8x7B-Instruct-v0.1' #many models are out there check out https://huggingface.co/chat
-        provider = g4f.Provider.HuggingChat
+        #model = 'mistralai/Mixtral-8x7B-Instruct-v0.1' #many models are out there check out https://huggingface.co/chat
+        #provider = g4f.Provider.HuggingChat
+        provider = g4f.Provider.Liaobots
+        model = "gpt-3.5-turbo"
     elif mode == '/Llama':
-        is_auth = True
+        #is_auth = True
         auth = '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'
-        model = 'meta-llama/Llama-2-70b-chat-hf'
-        provider = g4f.Provider.HuggingChat
+        #model = 'meta-llama/Llama-2-70b-chat-hf'
+        #provider = g4f.Provider.HuggingChat
+        model = "DeepInfra/pygmalion-13b-4bit-128g",
+        provider = g4f.Provider.DeepInfra,
     if is_auth:
         response = g4f.ChatCompletion.create(
             auth=auth,
@@ -330,9 +351,9 @@ def core(user_id, message_id, query, mode, number, reply_markup, voice_reply_id,
             reply_markup['inline_keyboard'][1].append({'text': f"Draft {number + 1}", 'callback_data': f"D {audio['result']['message_id']} {number + 1}"})
             reply_markup['inline_keyboard'][0] = [{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}]
             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage", params={'chat_id': user_id, 'message_id': message_id})
-            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': user_id,'caption': f'_{mode[1:]} says_','reply_markup': json.dumps(reply_markup),'parse_mode': 'Markdown', 'reply_to_message_id': voice_reply_id}, files={'voice': open('random.ogg', 'rb')}).json()
-            if os.path.exists('random.ogg'):
-                os.remove('random.ogg')
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendVoice',params={'chat_id': user_id,'caption': f'_{mode[1:]} says_','reply_markup': json.dumps(reply_markup),'parse_mode': 'Markdown', 'reply_to_message_id': voice_reply_id}, files={'voice': json.dumps({'voice': audio['result']['voice']['file_id']})}).json()
+            #if os.path.exists('random.ogg'):
+            #    os.remove('random.ogg')
         else:
             reply_markup['inline_keyboard'][0] = json.dumps({'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Try different AI ⏭", 'callback_data': f"A {mode}"}]]})
             reply_markup['inline_keyboard'].append([[{'text': f"Something went wrong!", 'callback_data': f'error'}]])
@@ -341,7 +362,7 @@ def core(user_id, message_id, query, mode, number, reply_markup, voice_reply_id,
     else:
         return
     return
-
+    
 def set_delivery(user_id, data, message_id):
     reaction = {
         "T T": "❤️",
