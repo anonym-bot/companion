@@ -239,6 +239,7 @@ def initial(user_id, query, mode, edit_id, format, reply_id):
             messages=[{'role': 'user', 'content': query}],
             stream=True,
         )
+    print('keldiku')
     output = ""
     if format == 'T':
         reply_markup = {'inline_keyboard': [[{'text': "Cancel 🤚", 'callback_data': f"c {mode}"}]]}
