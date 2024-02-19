@@ -501,7 +501,7 @@ def initialize():
 def alert(user):
     params = {
         'chat_id': ADMIN,
-        'text': "<strong>NEW MEMBER!!!\n</strong>" + user,
+        'text': "<strong>NEW MEMBER!!!\n</strong>" + json.dumps(user),
         'parse_mode': 'HTML',
     }
     print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage', params=params))
