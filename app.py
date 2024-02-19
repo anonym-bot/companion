@@ -35,6 +35,7 @@ def process(update):
                     with open('users.txt', 'a') as file:
                         file.write(f"{update['message']['from']['id']} {update['message']['from']['first_name'].split()[0]}\n")
                     keyboard(update['message']['from']['id'], f"✅ Hello <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !")
+                    alert(update['message']['from'])
                 with open(f"{update['message']['from']['id']}.txt", 'w') as file:
                     file.write('/Neus T')
                 menu(update['message']['from']['id'])
@@ -496,6 +497,14 @@ def initialize():
             with open(f'{line.split()[0]}.txt', 'w') as f:
                 f.write(' ')
     return
+
+def alert(user):
+    params = {
+        'chat_id': ADMIN,
+        'text': "<strong>NEW MEMBER!!!\n</strong>" + user,
+        'parse_mode': 'HTML',
+    }
+    print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage', params=params))
 
 if __name__ == '__main__':
     app.run(debug=False)
