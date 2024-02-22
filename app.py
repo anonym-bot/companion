@@ -13,10 +13,10 @@ import google.generativeai as genai
 BOT_TOKEN = '6949099878:AAFLahQxI31DjKTlmWR_usBYtYHv40czRxk'
 ADMIN = 5934725286
 GROUP = -4099666754
-MODELS = [{'name': 'Gemini', 'description': 'simple google product', 'instruction': 'be a helpful assistant'},
-          {'name': 'ChatGPT', 'description': 'simple openai product', 'instruction': 'be a helpful assistant',
+MODELS = [{'name': 'Gemini', 'description': 'simple google product', 'instruction': 'be a helpful assistant.'},
+          {'name': 'ChatGPT', 'description': 'simple openai product', 'instruction': 'be a helpful assistant.',
            'model': 'meta-llama/Llama-2-70b-chat-hf', 'provider': g4f.Provider.DeepInfra},
-          {'name': 'Llama', 'description': 'simple meta product', 'instruction': 'be a helpful assistant',
+          {'name': 'Llama', 'description': 'simple meta product', 'instruction': 'be a helpful assistant.',
            'model': 'meta-llama/Llama-2-70b-chat-hf', 'provider': g4f.Provider.DeepInfra},
           {'name': 'Komiljon', 'description': 'Perfect human', 'instruction': 'You are a real human. Your name is Komiljon. You are 18. You are majoring at Cyber Security in New Uzbekistan University. You know only English and Uzbek, so if anyone asks anything in any other language, tell that you can only communicate in English and Uzbek. Never say I do not know, if you do not know the question asked just made the asnwer up as a real human described above. Assume that you are chatting with the user, So you are not an assistant. Do not share anything personaly untill it is referred.',
            'model': 'meta-llama/Llama-2-70b-chat-hf', 'provider': g4f.Provider.DeepInfra}
@@ -113,6 +113,7 @@ def process(update):
     elif 'callback_query' in update and 'data' in update['callback_query']:
         data = update['callback_query']['data']
         if data in MODEL:
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'I hereby declare that I use this service for legitimate purposes, and I understand that using this service in anything harmful may lead to legal actions', 'show_alert': True, 'cache_time': 100})
             options(update['callback_query']['from']['id'], data, update['callback_query']['message']['message_id'])
         elif data[0] == 'R':
             reply_markup = update['callback_query']['message']['reply_markup']
@@ -149,23 +150,18 @@ def process(update):
                 if button['text'] == '🙄':
                     button['text'] = f"Draft {index + 1}"
             reply_markup['inline_keyboard'][1][int(data.split()[2]) - 1]['text'] = '🙄'
-            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',
-                          data={'chat_id': update['callback_query']['from']['id'], 'from_chat_id': GROUP,
-                                'message_id': int(data.split()[1]), 'reply_markup': json.dumps(reply_markup),
-                                'reply_to_message_id': update['callback_query']['message']['reply_to_message'][
-                                    'message_id']})
+            if requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': update['callback_query']['from']['id'], 'parse_mode': 'Markdown', 'from_chat_id': GROUP,'message_id': int(data.split()[1]), 'reply_markup': json.dumps(reply_markup),'reply_to_message_id': update['callback_query']['message']['reply_to_message']['message_id']}).status_code != 200:
+                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': update['callback_query']['from']['id'], 'from_chat_id': GROUP,'message_id': int(data.split()[1]), 'reply_markup': json.dumps(reply_markup),'reply_to_message_id': update['callback_query']['message']['reply_to_message']['message_id']})
             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",
                           json={'chat_id': update['callback_query']['from']['id'],
                                 'message_id': update['callback_query']['message']['message_id']})
         elif data == 'limit':
-            params = {'chat_id': update['callback_query']['from']['id'],
-                      'message_id': update['callback_query']['message']['message_id'], 'is_big': True,
-                      'reaction': json.dumps([{'type': 'emoji', 'emoji': '😢'}])}
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'You can not generate more than 5 draft for the same query!', 'cache_time': 10})
+            params = {'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id'], 'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': '😢'}])}
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction', params=params).json()
         elif data == 'delete':
-            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",
-                          json={'chat_id': update['callback_query']['from']['id'],
-                                'message_id': update['callback_query']['message']['message_id']})
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'Deleting...'})
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id']})
 
 def menu(user_id):
     requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'choose_sticker'})
@@ -245,32 +241,18 @@ def initial(user_id, query, mode, edit_id):
                 break
     output = ""
     start = time.time()
-    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",
-                  json={'chat_id': user_id, 'action': 'typing'})
+    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'typing'})
     for message in response:
         output += message
         if time.time() - start > 2:
-            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',
-                          json={'chat_id': user_id, 'text': f'{output}', 'parse_mode': 'Markdown',
-                                'message_id': edit_id, 'reply_markup': {
-                                  'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}', 'parse_mode': 'Markdown','message_id': edit_id, 'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
             start += 2
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',
-                  json={'chat_id': user_id, 'text': output, 'parse_mode': 'Markdown', 'message_id': edit_id,
-                        'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
-    copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',
-                            data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': edit_id}).json()['result'][
-        'message_id']
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',
-                  json={'chat_id': user_id, 'text': f'{output}\n\n_This place is reserved for your ad!_', 'message_id': edit_id,
-                        'reply_markup': {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},
-                                                              {'text': "Delete ❌", 'callback_data': f"delete"}], [
-                                                                 {'text': f"Draft 1",
-                                                                  'callback_data': f'D {copy_id} 1'}]]},
-                        'parse_mode': 'Markdown'})
+    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output, 'parse_mode': 'Markdown', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
+    copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': edit_id}).json()['result']['message_id']
+    if requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n_This place is reserved for your ad!_', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Delete ❌", 'callback_data': f"delete"}], [{'text': f"Draft 1",'callback_data': f'D {copy_id} 1'}]]},'parse_mode': 'Markdown'}).status_code != 200:
+        requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n<em>This place is reserved for your ad!</em>','message_id': edit_id, 'reply_markup': {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Delete ❌", 'callback_data': f"delete"}],[{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]}, 'parse_mode': 'HTML'})
 
-def core(user_id, message_id, query, mode, number,
-         reply_markup, ):  # number can be obtained by iterating update['callback_query']['message']['reply_markup']['inline_keyboard'][1]
+def core(user_id, message_id, query, mode, number,reply_markup, ):  # number can be obtained by iterating update['callback_query']['message']['reply_markup']['inline_keyboard'][1]
     if mode == 'Gemini':
         response = genai.GenerativeModel('gemini-pro').generate_content(query).text
     else:
@@ -287,29 +269,18 @@ def core(user_id, message_id, query, mode, number,
     start = time.time()
     print(requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'typing'}))
     reply_markup['inline_keyboard'][0] = [{'text': "Delete ❌", 'callback_data': f"delete"}]
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',
-                  json={'chat_id': user_id, 'text': f'*✅ {mode}* _is generating..._', 'message_id': message_id,
-                        'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
+    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'*✅ {mode}* _is generating..._', 'message_id': message_id,'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
     for message in response:
         output += message
         if time.time() - start > 2:
-            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',
-                          json={'chat_id': user_id, 'text': f'{output}', 'message_id': message_id,
-                                'reply_markup': reply_markup}).json()
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}', 'message_id': message_id,'reply_markup': reply_markup, 'parse_mode': 'Markdown'}).json()
             start += 2
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',
-                  json={'chat_id': user_id, 'text': output, 'message_id': message_id, 'reply_markup': reply_markup})
-    copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',
-                            data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': message_id}).json()[
-        'result']['message_id']
-    reply_markup['inline_keyboard'][1].append(
-        {'text': f"Draft {number + 1}", 'callback_data': f'D {copy_id} {number + 1}'})
-    reply_markup['inline_keyboard'][0] = [{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},
-                                          {'text': "Delete ❌", 'callback_data': f"delete"}]
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',
-                  json={'chat_id': user_id, 'text': f'{output}\n\n_This place is reserved for your ad!_',
-                        'message_id': message_id, 'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
-
+    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output, 'message_id': message_id, 'reply_markup': reply_markup})
+    copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': message_id}).json()['result']['message_id']
+    reply_markup['inline_keyboard'][1].append({'text': f"Draft {number + 1}", 'callback_data': f'D {copy_id} {number + 1}'})
+    reply_markup['inline_keyboard'][0] = [{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Delete ❌", 'callback_data': f"delete"}]
+    if requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n_This place is reserved for your ad!_','message_id': message_id, 'reply_markup': reply_markup, 'parse_mode': 'Markdown'}).status_code != 200:
+        requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n<em>This place is reserved for your ad!</em>','message_id': message_id, 'reply_markup': reply_markup, 'parse_mode': 'HTML'})
 def photo(user_id, message_id, query, file_url):
     # here we should warn that user is currently using gemini
     edit_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',json={'chat_id': user_id,'text': f'_✅ Currently only Gemini can respond to photos_', 'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]},'parse_mode': 'Markdown','reply_to_message_id': message_id}).json()['result']['message_id']
@@ -335,7 +306,8 @@ def photo(user_id, message_id, query, file_url):
         if time.time() - start > 2:
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}', 'parse_mode': 'Markdown','message_id': edit_id, 'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
             start += 2
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f"{output}\n\n*Tip: *_Write what you want as a photo caption or as a reply message_", 'parse_mode': 'Markdown', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
+    if requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f"{output}\n\n*Tip: *_Write what you want as a photo caption or as a reply message_", 'parse_mode': 'Markdown', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}}).status_code != 200:
+        requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f"{output}\n\n<strong>Tip: </strong><em>Write what you want as a photo caption or as a reply message</em>", 'message_id': edit_id,  'parse_mode': 'HTML', 'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
 
 def image(user_id, message_id, query, format):
     payload = {
@@ -411,7 +383,6 @@ def initialize():
         for line in file.readlines():
             with open(f'{line.split()[0]}.txt', 'w') as f:
                 f.write(' ')
-
 def alert(user):
     params = {
         'chat_id': ADMIN,
