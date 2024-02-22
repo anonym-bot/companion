@@ -442,7 +442,7 @@ def test():
             stream=True,
         )
         for a in response:
-            print('You', a)
+            print('You FAULTY: ', a)
     except Exception as a:
         print(a)
     try:
@@ -455,7 +455,7 @@ def test():
         for a in response:
             print(a)
     except Exception as a:
-        print('Bing', a)
+        print('Bing FAULTY: ', a)
 
 #if __name__ == '__main__':
 #    random()
