@@ -1,8 +1,10 @@
 import io
+import os
 import g4f
 import time
 import json
 import requests
+import PIL.Image
 import assemblyai as aai
 from flask import Flask, request
 import google.generativeai as genai
@@ -67,6 +69,8 @@ def process(update):
                 initialize()
             elif message == '/USERS' and update['message']['from']['id'] == ADMIN:
                 send_users()
+            elif 'reply_to_message' in update['message'] and 'photo' in update['message']['reply_to_message']:
+                photo(update['message']['from']['id'], update['message']['message_id'], update['message']['text'], requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['message']['reply_to_message']['photo'][3]['file_id']}).json()['result']['file_path'])
             else:
                 try:
                     model = open(f"{update['message']['from']['id']}.txt", 'r').read()
@@ -102,6 +106,11 @@ def process(update):
                               json={'chat_id': update['message']['from']['id'], 'message_id': edit_id,
                                     'text': f'_Sorry, I could not catch you_', 'parse_mode': 'Markdown',
                                    'reply_to_message_id': update['message']['message_id']})
+        elif 'photo' in update['message']:
+            if 'caption' in update['message']['photo']:
+                photo(update['message']['from']['id'], update['message']['message_id'], update['message']['photo']['caption'], requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['message']['photo'][3]['file_id']}).json()['result']['file_path'])
+            else:
+                photo(update['message']['from']['id'], update['message']['message_id'], '', requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['message']['photo'][3]['file_id']}).json()['result']['file_path'])
         elif 'pinned_message' in update['message']:
             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': update['message']['chat']['id'], 'message_id': update['message']['message_id']})
     elif 'callback_query' in update and 'data' in update['callback_query']:
@@ -283,8 +292,7 @@ def core(user_id, message_id, query, mode, number,
                 break
     output = ""
     start = time.time()
-    print(requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",
-                        json={'chat_id': user_id, 'action': 'typing'}))
+    print(requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'typing'}))
     reply_markup['inline_keyboard'][0] = [{'text': "Delete ❌", 'callback_data': f"delete"}]
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',
                   json={'chat_id': user_id, 'text': f'*✅ {mode}* _is generating..._', 'message_id': message_id,
@@ -309,6 +317,32 @@ def core(user_id, message_id, query, mode, number,
                   json={'chat_id': user_id, 'text': f'{output}\n\n_This place is reserved for your ad!_',
                         'message_id': message_id, 'reply_markup': reply_markup, 'parse_mode': 'Markdown'})
 
+def photo(user_id, message_id, query, file_url):
+    # here we should warn that user is currently using gemini
+    edit_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',json={'chat_id': user_id,'text': f'_✅ Currently only Gemini can respond to photos_', 'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]},'parse_mode': 'Markdown','reply_to_message_id': message_id}).json()['result']['message_id']
+    with requests.get(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}", stream=True) as r:
+        r.raise_for_status()
+        with open('image.jpg', 'wb') as f:
+            for chunk in r:
+                f.write(chunk)
+    if query != '':
+        img = PIL.Image.open('image.jpg')
+        response = genai.GenerativeModel('gemini-pro-vision').generate_content([query,img], stream=True)
+    else:
+        img = PIL.Image.open('image.jpg')
+        response = genai.GenerativeModel('gemini-pro-vision').generate_content(img, stream=True)
+    response.resolve()
+    if os.path.exists('image.jpg'):
+        os.remove('image.jpg')
+    output = ""
+    start = time.time()
+    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'typing'})
+    for message in response:
+        output += message.text
+        if time.time() - start > 2:
+            requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}', 'parse_mode': 'Markdown','message_id': edit_id, 'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
+            start += 2
+    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f"{output}\n\n*Tip: *_Write what you want as a photo caption or as a reply message_", 'parse_mode': 'Markdown', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
 
 def image(user_id, message_id, query, format):
     payload = {
