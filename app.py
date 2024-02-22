@@ -67,6 +67,7 @@ def process(update):
                 menu(update['message']['from']['id'], True)
             elif message == '/INITIALIZE' and update['message']['from']['id'] == ADMIN:
                 initialize()
+                test()
             elif message == '/USERS' and update['message']['from']['id'] == ADMIN:
                 send_users()
             elif 'reply_to_message' in update['message'] and 'photo' in update['message']['reply_to_message']:
@@ -432,6 +433,29 @@ def alert(user):
     }
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage', params=params)
 
+def test():
+    try:
+        response = g4f.ChatCompletion.create(
+            model='gpt-4-turbo',
+            provider=g4f.Provider.You,
+            messages=[{'role': 'user', 'content': "hello"}],
+            stream=True,
+        )
+        for a in response:
+            print('You', a)
+    except Exception as a:
+        print(a)
+    try:
+        response = g4f.ChatCompletion.create(
+            model='gpt-4-turbo',
+            provider=g4f.Provider.Bing,
+            messages=[{'role': 'user', 'content': "hello"}],
+            stream=True,
+        )
+        for a in response:
+            print(a)
+    except Exception as a:
+        print('Bing', a)
 
 #if __name__ == '__main__':
 #    random()
