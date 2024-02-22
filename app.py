@@ -28,7 +28,6 @@ app = Flask(__name__)
 genai.configure(api_key='AIzaSyA0qzyz3SZmjcfwD-FHhRQLZZHL5o0LQO0')
 aai.settings.api_key = "cc59032b0a284ef3a7071106a7be9885"
 
-
 @app.route('/', methods=['POST'])
 def handle_webhook():
     try:
@@ -37,7 +36,6 @@ def handle_webhook():
     except Exception as e:
         print(e)
         return 'Error'
-
 
 def random():
     global last_update_id
@@ -48,7 +46,6 @@ def random():
         for update in updates:
             process(update)
             last_update_id = update['update_id'] + 1
-
 
 def process(update):
     if 'message' in update:
@@ -62,12 +59,11 @@ def process(update):
                     alert(update['message']['from'])
                 with open(f"{update['message']['from']['id']}.txt", 'w') as file:
                     file.write(MODELS[0]['name'])
-                menu(update['message']['from']['id'], False)
+                menu(update['message']['from']['id'])
             elif message == '/new_chat':
-                menu(update['message']['from']['id'], True)
+                menu(update['message']['from']['id'])
             elif message == '/INITIALIZE' and update['message']['from']['id'] == ADMIN:
                 initialize()
-                test()
             elif message == '/USERS' and update['message']['from']['id'] == ADMIN:
                 send_users()
             elif 'reply_to_message' in update['message'] and 'photo' in update['message']['reply_to_message']:
@@ -171,8 +167,7 @@ def process(update):
                           json={'chat_id': update['callback_query']['from']['id'],
                                 'message_id': update['callback_query']['message']['message_id']})
 
-
-def menu(user_id, unpin):
+def menu(user_id):
     requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendChatAction",json={'chat_id': user_id, 'action': 'choose_sticker'})
     reply_markup = {'inline_keyboard': []}
     if len(MODEL) % 2 == 0:
@@ -191,8 +186,7 @@ def menu(user_id, unpin):
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction',
                   params={'chat_id': user_id, 'message_id': message_id, 'is_big': True,
                           'reaction': json.dumps([{'type': 'emoji', 'emoji': f"🙏"}])})
-    if unpin:
-        requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/unpinAllChatMessages',params={'chat_id': user_id})
+    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/unpinAllChatMessages',params={'chat_id': user_id})
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/pinChatMessage', params={'chat_id': user_id, 'message_id': message_id}).json()
 
 def options(user_id, data, message_id):
@@ -236,7 +230,6 @@ def options(user_id, data, message_id):
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id,'message_id': message_id, 'text': f'*You are chatting with* _{data}_','reply_markup': json.dumps(reply_markup), 'parse_mode': 'Markdown'})
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction',params={'chat_id': user_id, 'message_id': message_id, 'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': REACTIONS[data]}])})
 
-
 def initial(user_id, query, mode, edit_id):
     if mode == 'Gemini':
         response = genai.GenerativeModel('gemini-pro').generate_content(query).text
@@ -275,7 +268,6 @@ def initial(user_id, query, mode, edit_id):
                                                                  {'text': f"Draft 1",
                                                                   'callback_data': f'D {copy_id} 1'}]]},
                         'parse_mode': 'Markdown'})
-
 
 def core(user_id, message_id, query, mode, number,
          reply_markup, ):  # number can be obtained by iterating update['callback_query']['message']['reply_markup']['inline_keyboard'][1]
@@ -396,7 +388,6 @@ def image(user_id, message_id, query, format):
     }
     print(requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/editMessageReplyMarkup", json=payload).json())
 
-
 def enhancer(user_id, message_id, query, format):
     payload = {
         "chat_id": user_id,
@@ -406,10 +397,8 @@ def enhancer(user_id, message_id, query, format):
     }
     requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage", json=payload)
 
-
 def stt(file_url):
     return aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
-
 
 def send_users():
     with open('users.txt', 'r') as file:
@@ -417,13 +406,11 @@ def send_users():
                       files={'document': ('Users.txt', io.StringIO(''.join(file.readlines())))})
     file.close()
 
-
 def initialize():
     with open('users.txt', 'r') as file:
         for line in file.readlines():
             with open(f'{line.split()[0]}.txt', 'w') as f:
                 f.write(' ')
-
 
 def alert(user):
     params = {
@@ -432,30 +419,6 @@ def alert(user):
         'parse_mode': 'HTML',
     }
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage', params=params)
-
-def test():
-    try:
-        response = g4f.ChatCompletion.create(
-            model='gpt-4-turbo',
-            provider=g4f.Provider.You,
-            messages=[{'role': 'user', 'content': "hello"}],
-            stream=True,
-        )
-        for a in response:
-            print('You FAULTY: ', a)
-    except Exception as a:
-        print(a)
-    try:
-        response = g4f.ChatCompletion.create(
-            model='gpt-4-turbo',
-            provider=g4f.Provider.Bing,
-            messages=[{'role': 'user', 'content': "hello"}],
-            stream=True,
-        )
-        for a in response:
-            print(a)
-    except Exception as a:
-        print('Bing FAULTY: ', a)
 
 #if __name__ == '__main__':
 #    random()
