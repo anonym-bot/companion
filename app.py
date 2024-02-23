@@ -105,17 +105,18 @@ def process(update):
                                    'reply_to_message_id': update['message']['message_id']})
         elif 'photo' in update['message']:
             if 'caption' in update['message']['photo']:
-                photo(update['message']['from']['id'], update['message']['message_id'], update['message']['photo']['caption'], requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['message']['photo'][3]['file_id']}).json()['result']['file_path'])
+                photo(update['message']['from']['id'], update['message']['message_id'], update['message']['photo']['caption'], requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['message']['photo'][-1]['file_id']}).json()['result']['file_path'])
             else:
-                photo(update['message']['from']['id'], update['message']['message_id'], '', requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['message']['photo'][3]['file_id']}).json()['result']['file_path'])
+                photo(update['message']['from']['id'], update['message']['message_id'], '', requests.get(f'https://api.telegram.org/bot{BOT_TOKEN}/getFile', params={'file_id': update['message']['photo'][-1]['file_id']}).json()['result']['file_path'])
         elif 'pinned_message' in update['message']:
             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/deleteMessage",json={'chat_id': update['message']['chat']['id'], 'message_id': update['message']['message_id']})
     elif 'callback_query' in update and 'data' in update['callback_query']:
         data = update['callback_query']['data']
         if data in MODEL:
-            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'I hereby declare that I use this service for legitimate purposes, and I understand that using this service in anything harmful may lead to legal actions', 'show_alert': True, 'cache_time': 100})
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'I hereby declare that I use this service for legitimate purposes, and I understand that using this service in anything harmful may lead to legal actions', 'show_alert': True})
             options(update['callback_query']['from']['id'], data, update['callback_query']['message']['message_id'])
         elif data[0] == 'R':
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'Generating...'})
             reply_markup = update['callback_query']['message']['reply_markup']
             if len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]) >= 5:
                 reply_markup['inline_keyboard'][0] = [
@@ -145,6 +146,7 @@ def process(update):
                      update['callback_query']['message']['reply_to_message']['text'], data.split()[1],
                      len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]), reply_markup)
         elif data[0] == 'D':
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'Sending...'})
             reply_markup = update['callback_query']['message']['reply_markup']
             for index, button in enumerate(reply_markup['inline_keyboard'][1]):
                 if button['text'] == '🙄':
@@ -156,7 +158,7 @@ def process(update):
                           json={'chat_id': update['callback_query']['from']['id'],
                                 'message_id': update['callback_query']['message']['message_id']})
         elif data == 'limit':
-            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'You can not generate more than 5 draft for the same query!', 'cache_time': 10})
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'You can not generate more than 5 drafts!'})
             params = {'chat_id': update['callback_query']['from']['id'],'message_id': update['callback_query']['message']['message_id'], 'is_big': True,'reaction': json.dumps([{'type': 'emoji', 'emoji': '😢'}])}
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/setMessageReaction', params=params).json()
         elif data == 'delete':
@@ -247,7 +249,8 @@ def initial(user_id, query, mode, edit_id):
         if time.time() - start > 2:
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}', 'parse_mode': 'Markdown','message_id': edit_id, 'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
             start += 2
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output, 'parse_mode': 'Markdown', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
+    if requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output, 'parse_mode': 'Markdown', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}}).status_code != 200:
+        requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output, 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
     copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': edit_id}).json()['result']['message_id']
     if requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n_This place is reserved for your ad!_', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Delete ❌", 'callback_data': f"delete"}], [{'text': f"Draft 1",'callback_data': f'D {copy_id} 1'}]]},'parse_mode': 'Markdown'}).status_code != 200:
         requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n<em>This place is reserved for your ad!</em>','message_id': edit_id, 'reply_markup': {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Delete ❌", 'callback_data': f"delete"}],[{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]}, 'parse_mode': 'HTML'})
@@ -275,7 +278,8 @@ def core(user_id, message_id, query, mode, number,reply_markup, ):  # number can
         if time.time() - start > 2:
             requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}', 'message_id': message_id,'reply_markup': reply_markup, 'parse_mode': 'Markdown'}).json()
             start += 2
-    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output, 'message_id': message_id, 'reply_markup': reply_markup})
+    if requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'parse_mode': 'Markdown', 'text': output, 'message_id': message_id, 'reply_markup': reply_markup}).status_code != 200:
+        requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output, 'message_id': message_id, 'reply_markup': reply_markup})
     copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': message_id}).json()['result']['message_id']
     reply_markup['inline_keyboard'][1].append({'text': f"Draft {number + 1}", 'callback_data': f'D {copy_id} {number + 1}'})
     reply_markup['inline_keyboard'][0] = [{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Delete ❌", 'callback_data': f"delete"}]
