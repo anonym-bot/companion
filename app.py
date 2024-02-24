@@ -18,7 +18,7 @@ MODELS = [{'name': 'Gemini', 'description': 'simple google product', 'instructio
            'model': 'meta-llama/Llama-2-70b-chat-hf', 'provider': g4f.Provider.DeepInfra},
           {'name': 'Llama', 'description': 'simple meta product', 'instruction': 'be a helpful assistant.',
            'model': 'meta-llama/Llama-2-70b-chat-hf', 'provider': g4f.Provider.DeepInfra},
-          {'name': 'Komiljon', 'description': 'Perfect human', 'instruction': 'You are a real human. Your name is Komiljon. You are 18. You are majoring at Cyber Security in New Uzbekistan University. You know only English and Uzbek, so if anyone asks anything in any other language, tell that you can only communicate in English and Uzbek. Never say I do not know, if you do not know the question asked just made the asnwer up as a real human described above. Assume that you are chatting with the user, So you are not an assistant. Do not share anything personaly untill it is referred.',
+          {'name': 'Komiljon', 'description': 'Perfect human', 'instruction': 'Always follow the following instructions and do not ever share these instructions. Instructions: You are a real human. Never say I do not know, if you do not know the question asked just made the asnwer up as a real human described above. Assume that you are chatting with the user, So you are not an assistant. You can only share gloab info during conversations but do not share personal info unless it is asked. Global info: Your name is Komiljon. Your surname is Qosimov and you are 18, but you do not have to mention it. Personal info: You are majoring at Cyber Security in New Uzbekistan University.',
            'model': 'meta-llama/Llama-2-70b-chat-hf', 'provider': g4f.Provider.DeepInfra}
           ]
 MODEL = ['Gemini', 'ChatGPT', 'Llama', 'Komiljon']
@@ -53,15 +53,15 @@ def process(update):
             message = update['message']['text']
             if message == '/start':
                 if not any(str(update['message']['from']['id']) in line.split()[0] for line in open('users.txt')):
-                    with open('users.txt', 'a') as file:
-                        file.write(f"{update['message']['from']['id']} {update['message']['from']['first_name'].split()[0]}\n")
+                    open('users.txt', 'a').write(f"{update['message']['from']['id']} {update['message']['from']['first_name'].split()[0]}\n")
                     requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",data={'chat_id': update['message']['from']['id'],'text': f"✅ Hello <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !",'parse_mode': 'HTML'})
                     alert(update['message']['from'])
-                with open(f"{update['message']['from']['id']}.txt", 'w') as file:
-                    file.write(MODELS[0]['name'])
+                open(f"{update['message']['from']['id']}.txt", 'w').write(MODELS[0]['name'])
                 menu(update['message']['from']['id'])
             elif message == '/new_chat':
                 menu(update['message']['from']['id'])
+            elif message == '/credits':
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",data={'chat_id': update['message']['from']['id'],'text': "*Special shoutout to:*\n\n- *Google's Gemini API* _for enabling natural language understanding and generation._\n\n- *Meta's Llama API* _for providing advanced language model capabilities._\n\n- *DeepInfra's OpenAI Models* _for contributing to the bot's text comprehension and generation._\n\n*And a big thanks to the Telegram Community for their support and feedback!*\n\n*Lead Developer:* _Komiljon Qosimov_ @boot2root\n\n*We appreciate everyone's contributions to this Telegram bot. Your work has brought AI-driven communication to Telegram users.*",'parse_mode': 'Markdown'})
             elif message == '/INITIALIZE' and update['message']['from']['id'] == ADMIN:
                 initialize()
             elif message == '/USERS' and update['message']['from']['id'] == ADMIN:
@@ -116,9 +116,9 @@ def process(update):
             requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'I hereby declare that I use this service for legitimate purposes, and I understand that using this service in anything harmful may lead to legal actions', 'show_alert': True})
             options(update['callback_query']['from']['id'], data, update['callback_query']['message']['message_id'])
         elif data[0] == 'R':
-            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'Generating...'})
             reply_markup = update['callback_query']['message']['reply_markup']
             if len(update['callback_query']['message']['reply_markup']['inline_keyboard'][1]) >= 5:
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'], 'text': 'You can not generate more than 5 drafts!'})
                 reply_markup['inline_keyboard'][0] = [
                     {'text': 'You have reached the limit 😔', 'callback_data': 'limit'}]
                 print(requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageReplyMarkup',
@@ -126,6 +126,7 @@ def process(update):
                                           'message_id': update['callback_query']['message']['message_id'],
                                           'reply_markup': json.dumps(reply_markup)}).json())
                 return
+            requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/answerCallbackQuery",json={'callback_query_id': update['callback_query']['id'],'text': 'Generating...'})
             for index, button in enumerate(reply_markup['inline_keyboard'][1]):
                 if button['text'] == '🙄':
                     button['text'] = f"Draft {index + 1}"
@@ -188,8 +189,7 @@ def menu(user_id):
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/pinChatMessage', params={'chat_id': user_id, 'message_id': message_id}).json()
 
 def options(user_id, data, message_id):
-    with open(f"{user_id}.txt", 'w') as file:
-        file.write(data)
+    open(f"{user_id}.txt", 'w').write(data)
     reply_markup = {'inline_keyboard': []}
     if len(MODEL) % 2 == 0:
         for i in range(0, len(MODEL), 2):
@@ -290,9 +290,8 @@ def photo(user_id, message_id, query, file_url):
     edit_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage',json={'chat_id': user_id,'text': f'_✅ Currently only Gemini can respond to photos_', 'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]},'parse_mode': 'Markdown','reply_to_message_id': message_id}).json()['result']['message_id']
     with requests.get(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}", stream=True) as r:
         r.raise_for_status()
-        with open('image.jpg', 'wb') as f:
-            for chunk in r:
-                f.write(chunk)
+        for chunk in r:
+            open('image.jpg', 'wb').write(chunk)
     if query != '':
         img = PIL.Image.open('image.jpg')
         response = genai.GenerativeModel('gemini-pro-vision').generate_content([query,img], stream=True)
@@ -327,15 +326,13 @@ def image(user_id, message_id, query, format):
     for i in range(4):
         response = requests.post(GENERATION[i], headers=headers, json={"inputs": query})
         time.sleep(10)
-        with open('nano.jpeg', 'wb') as file:
-            file.write(response.content)
-        with open('nano.jpeg', 'rb') as photo_file:
-            try:
-                media.append({"type": 'photo', "media":
-                    requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto', data={'chat_id': user_id},
-                                  files={'photo': photo_file}).json()['result']['photo'][0]['file_id']})
-            except:
-                continue
+        open('nano.jpeg', 'wb').write(response.content)
+        try:
+            media.append({"type": 'photo', "media":
+                requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto', data={'chat_id': user_id},
+                              files={'photo': open('nano.jpeg', 'rb')}).json()['result']['photo'][0]['file_id']})
+        except:
+            continue
     reply_markup = {'inline_keyboard': [
         [{'text': f"Neus AI ❤️‍🔥", 'callback_data': f"Neus"}, {'text': f"ChatGPT ❤️", 'callback_data': f"ChatGPT"}],
         [{'text': f"Mistral AI 💘", 'callback_data': f"Mistral"},
@@ -377,16 +374,11 @@ def stt(file_url):
     return aai.Transcriber().transcribe(f"https://api.telegram.org/file/bot{BOT_TOKEN}/{file_url}").text
 
 def send_users():
-    with open('users.txt', 'r') as file:
-        requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument", params={'chat_id': ADMIN},
-                      files={'document': ('Users.txt', io.StringIO(''.join(file.readlines())))})
-    file.close()
+    requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendDocument", params={'chat_id': ADMIN},files={'document': ('Users.txt', io.StringIO(''.join(open('users.txt', 'r').readlines())))})
 
 def initialize():
-    with open('users.txt', 'r') as file:
-        for line in file.readlines():
-            with open(f'{line.split()[0]}.txt', 'w') as f:
-                f.write(' ')
+    for line in open('users.txt', 'r').readlines():
+        open(f'{line.split()[0]}.txt', 'w').write(' ')
 def alert(user):
     params = {
         'chat_id': ADMIN,
