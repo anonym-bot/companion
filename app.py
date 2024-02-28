@@ -12,18 +12,18 @@ import google.generativeai as genai
 BOT_TOKEN = '6949099878:AAFLahQxI31DjKTlmWR_usBYtYHv40czRxk'
 ADMIN = 5934725286
 GROUP = -4099666754
-MODELS = [{'name': 'Gemini', 'description': 'simple google product', 'instruction': 'be a helpful assistant. You are Gemini AI.'},
-          {'name': 'Mistral', 'description': 'simple mistral ai product', 'instruction': 'be a helpful assistant. You are Mistral AI.',
-           'model': 'mistralai/Mixtral-8x7B-Instruct-v0.1', 'provider': g4f.Provider.DeepInfra},
-          {'name': 'Oculus', 'description': 'simple google product', 'instruction': 'be a helpful assistant. You are Oculus AI.',
+MODELS = [{'name': 'Gemini', 'description': 'a multi\\-modal AI language model developed by Google\\. Have an ability to understand text messages as well as photos\\.', 'instruction': 'be a helpful assistant. You are Gemini AI.'},
+          {'name': 'Oculus', 'description': 'a chatbot that can provide helpful responses and assist with various tasks including finding information, generating text, crawling the web, answering questions, and more\\.', 'instruction': 'be a helpful assistant. You are Oculus AI.',
            'model': 'codellama/CodeLlama-70b-Instruct-hf', 'provider': g4f.Provider.DeepInfra},
-          {'name': 'Llama', 'description': 'simple meta product', 'instruction': 'be a helpful assistant. You are Llama AI',
+          {'name': 'Mistral', 'description': 'a state\\-of\\-the\\-art AI assistant designed to provide helpful and accurate responses to a wide range of inquiries\\.','instruction': 'be a helpful assistant. You are Mistral AI.',
+           'model': 'mistralai/Mixtral-8x7B-Instruct-v0.1', 'provider': g4f.Provider.DeepInfra},
+          {'name': 'Llama', 'description': 'your friendly and helpful assistant\\. Highly advanced language model trained on a wide range of topics and tasks\\.', 'instruction': 'be a helpful assistant. You are Llama AI',
            'model': 'meta-llama/Llama-2-70b-chat-hf', 'provider': g4f.Provider.DeepInfra},
-          {'name': 'Komiljon', 'description': 'Perfect human', 'instruction': """You are a real human. Never say I do not know, if you do not know the question asked just made the asnwer up as a real human described above. Assume that you are chatting with the user in Telegram, So you are not an assistant. You are Uzbek. You are tall. It is difficult for you to get along with somebody. You are not very outgoing. You are humble. You like to respond short and clear. You will never use bad words. You can only share global info during conversations but do not share personal info unless it is asked. Global info: Your name is Komiljon. Your surname is Qosimov and you are 18, but you do not have to mention it. Personal info: You are majoring at Cyber Security in New Uzbekistan University.""",
-           'model': 'meta-llama/Llama-2-70b-chat-hf', 'provider': g4f.Provider.DeepInfra}
+          {'name': 'Komiljon', 'description': "Trained AI model based on Meta\\'s Code Llama\\.", 'instruction': """You are a real human. Never say I do not know, if you do not know the question asked just made the asnwer up as a real human described above. Assume that you are chatting with the user in Telegram, So you are not an assistant. You are Uzbek. You are tall. It is difficult for you to get along with somebody. You are not very outgoing. You are humble. You like to respond short and clear. You will never use bad words. You can only share global info during conversations but do not share personal info unless it is asked. Global info: Your name is Komiljon. Your surname is Qosimov and you are 18, but you do not have to mention it. Personal info: You are majoring at Cyber Security in New Uzbekistan University.""",
+           'model': 'mistralai/Mistral-7B-Instruct-v0.1', 'provider': g4f.Provider.DeepInfra}
           ]
 MODEL = ['Gemini', 'Oculus', 'Mistral', 'Llama', 'Komiljon']
-REACTIONS = {'Gemini': '⚡️', 'Mistral': '🔥', 'Oculus': '👨‍💻', 'Llama': '🏆', 'Komiljon': '🫡'}
+REACTIONS = {'Gemini': '⚡️', 'Oculus': '👨‍💻', 'Mistral': '🔥', 'Llama': '🏆', 'Komiljon': '🫡'}
 
 app = Flask(__name__)
 genai.configure(api_key='AIzaSyA0qzyz3SZmjcfwD-FHhRQLZZHL5o0LQO0')
@@ -65,8 +65,11 @@ def process(update):
                 menu(update['message']['from']['id'])
             elif message == '/credits':
                 requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",data={'chat_id': update['message']['from']['id'],'text': "*Special shoutout to:*\n\n- *Google's Gemini API* _for enabling natural language understanding and generation._\n\n- *Meta's Llama API* _for providing advanced language model capabilities._\n\n- *DeepInfra's OpenAI Models* _for contributing to the bot's text comprehension and generation._\n\n*And a big thanks to the Telegram Community for their support and feedback!*\n\n*Lead Developer:* _Komiljon Qosimov_ @boot2root\n\n*We appreciate everyone's contributions to this Telegram bot. Your work has brought AI-driven communication to Telegram users.*",'parse_mode': 'Markdown'})
-            elif message == '/new_chat':
-                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",data={'chat_id': update['message']['from']['id'],'text': "_Here goes a brief description about AI models_",'parse_mode': 'Markdown'})
+            elif message == '/info':
+                text = "__Here are brief overview of each AI model 💁🏼‍♂️__\n\n"
+                for item in MODELS:
+                    text += f"*🤖 {item['name']}: *_{item['description']}_\n\n"
+                requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",data={'chat_id': update['message']['from']['id'],'text': text,'parse_mode': 'MarkdownV2'}).json()
             elif message == '/INITIALIZE' and update['message']['from']['id'] == ADMIN:
                 initialize()
             elif message == '/USERS' and update['message']['from']['id'] == ADMIN:
@@ -268,10 +271,10 @@ def initial(user_id, query, mode, edit_id):
     if requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output + f'\n\n_Response by {mode}_', 'parse_mode': 'Markdown', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}}).status_code != 200:
         requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': output + f'\n\nResponse by {mode}', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': "Delete ❌", 'callback_data': f"delete"}]]}})
     copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': edit_id}).json()['result']['message_id']
-    if len(chat_history) >= 21:
+    if len(chat_history) >= 11:
         extra = "Let's have a /new_chat"
     else:
-        extra = f'{int(len(chat_history) / 2)}/10'
+        extra = f'{int(len(chat_history) / 2)}/5'
     if requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n_{extra}_', 'message_id': edit_id,'reply_markup': {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Delete ❌", 'callback_data': f"delete"}], [{'text': f"Draft 1",'callback_data': f'D {copy_id} 1'}]]},'parse_mode': 'Markdown'}).status_code != 200:
         requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n<em>{extra}</em>','message_id': edit_id, 'reply_markup': {'inline_keyboard': [[{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Delete ❌", 'callback_data': f"delete"}],[{'text': f"Draft 1", 'callback_data': f'D {copy_id} 1'}]]}, 'parse_mode': 'HTML'})
 
@@ -308,10 +311,10 @@ def core(user_id, message_id, query, mode, number,reply_markup):  # number can b
     copy_id = requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/copyMessage',data={'chat_id': GROUP, 'from_chat_id': user_id, 'message_id': message_id}).json()['result']['message_id']
     reply_markup['inline_keyboard'][1].append({'text': f"Draft {number + 1}", 'callback_data': f'D {copy_id} {number + 1}'})
     reply_markup['inline_keyboard'][0] = [{'text': f"Regenerate ♻️", 'callback_data': f'R {mode}'},{'text': "Delete ❌", 'callback_data': f"delete"}]
-    if len(chat_history) >= 21:
+    if len(chat_history) >= 11:
         extra = "Let's have a /new_chat"
     else:
-        extra = f'{int(len(chat_history) / 2)}/10'
+        extra = f'{int(len(chat_history) / 2)}/5'
     if requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n_{extra}_','message_id': message_id, 'reply_markup': reply_markup, 'parse_mode': 'Markdown'}).status_code != 200:
         requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/editMessageText',json={'chat_id': user_id, 'text': f'{output}\n\n<em>{extra}</em>','message_id': message_id, 'reply_markup': reply_markup, 'parse_mode': 'HTML'})
 def photo(user_id, message_id, query, file_url):
