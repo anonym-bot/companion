@@ -3,6 +3,7 @@ import os
 import g4f
 import time
 import json
+import base64
 import requests
 import PIL.Image
 import assemblyai as aai
@@ -10,6 +11,7 @@ from flask import Flask, request
 import google.generativeai as genai
 #global last_update_id
 BOT_TOKEN = '6949099878:AAFLahQxI31DjKTlmWR_usBYtYHv40czRxk'
+GIT_TOKEN = "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"
 ADMIN = 5934725286
 GROUP = -4099666754
 MODELS = [{'name': 'Gemini', 'description': 'a multi\\-modal AI language model developed by Google\\. Have an ability to understand text messages as well as photos\\.', 'instruction': 'be a helpful assistant. You are Gemini AI.'},
@@ -57,6 +59,7 @@ def process(update):
                     open('users.txt', 'a').write(f"{update['message']['from']['id']} {update['message']['from']['first_name'].split()[0]}\n")
                     requests.post(f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",data={'chat_id': update['message']['from']['id'],'text': f"✅ Hello <a href='tg://user?id={update['message']['from']['id']}'>{update['message']['from']['first_name']}</a> !",'parse_mode': 'HTML'})
                     alert(update['message']['from'])
+                    git_update("users.txt")
                 open(f"{update['message']['from']['id']}.txt", 'w').write(MODELS[0]['name'])
                 menu(update['message']['from']['id'])
             elif message == '/new_chat':
@@ -418,6 +421,30 @@ def alert(user):
         'parse_mode': 'HTML',
     }
     requests.post(f'https://api.telegram.org/bot{BOT_TOKEN}/sendMessage', params=params)
+
+def git_update(filename):
+    username = "anonym-bot"
+    repository = "x"
+    branch = "main"
+    with open(filename, "r") as file:
+        new_content = file.read()
+    new_content_bytes = new_content.encode("utf-8")
+    new_content_base64 = base64.b64encode(new_content_bytes).decode("utf-8")
+    url = f"https://api.github.com/repos/{username}/{repository}/contents/{filename}"
+    headers = {
+        "Authorization": f"token {GIT_TOKEN}"
+    }
+    response = requests.get(url, headers=headers)
+    response_data = response.json()
+    sha = response_data["sha"]
+    payload = {
+        "message": "Update users.txt",
+        "content": new_content_base64,
+        "sha": sha,
+        "branch": branch
+    }
+    update_url = f"https://api.github.com/repos/{username}/{repository}/contents/{filename}"
+    requests.put(update_url, json=payload, headers=headers)
 
 #if __name__ == '__main__':
 #    random()
