@@ -424,7 +424,7 @@ def alert(user):
 
 def git_update(filename):
     username = "anonym-bot"
-    repository = "x"
+    repository = "companion"
     branch = "main"
     with open(filename, "r") as file:
         new_content = file.read()
