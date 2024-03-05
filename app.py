@@ -13,7 +13,7 @@ import google.generativeai as genai
 BOT_TOKEN = '6949099878:AAFLahQxI31DjKTlmWR_usBYtYHv40czRxk'
 GIT_TOKEN = "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"
 ADMIN = 5934725286
-GROUP = -4099666754
+GROUP = -1002023850531
 MODELS = [{'name': 'Gemini', 'description': 'a multi\\-modal AI language model developed by Google\\. Have an ability to understand text messages as well as photos\\.', 'instruction': 'be a helpful assistant. You are Gemini AI.'},
           {'name': 'Oculus', 'description': 'a chatbot that can provide helpful responses and assist with various tasks including finding information, generating text, crawling the web, answering questions, and more\\.', 'instruction': 'be a helpful assistant. You are Oculus AI.',
            'model': 'codellama/CodeLlama-70b-Instruct-hf', 'provider': g4f.Provider.DeepInfra},
